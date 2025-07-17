@@ -61,12 +61,23 @@
 
 ```json
 {
-  "player": "子", // "親" or "子"
-  "bakaze": "東", // "東", "南", "西", "北"
-  "jikaze": "北", // "東", "南", "西", "北"
-  "dora_indicators": ["中"], // ドラ表示牌のリスト (例: ["1m", "9p", "2s"])
-  "options": ["リーチ"] // "リーチ", "一発", "ツモ" などのオプションのリスト
-}
+  "is_tsumo": True,
+  "is_oya": False,
+  "is_reach": True,
+  "dora_indicators": ["5m", "5p"],
+  "ura_dora_indicators": ["6m", "6p"],
+  "bakaze": "1z",
+  "jikaze": "2z",
+  "renchan": 0,
+  "is_chankan": True,
+  "is_haitei": False,
+  "is_kaitei": True,
+  "is_ippatsu": False,
+  "is_riichi": True,
+  "is_tenhou": False,
+  "is_chiihou": False,
+  "is_rinshan": False,
+  }
 ```
 
 ### **4.2. 成功応答 (JSON)**
