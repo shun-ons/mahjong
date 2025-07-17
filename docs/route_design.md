@@ -68,9 +68,16 @@
   "ura_dora_indicators": ["6m", "6p"],
   "bakaze": "1z",
   "jikaze": "2z",
+  "renchan": 0,
+  "is_chankan": True,
+  "is_haitei": False,
+  "is_kaitei": True,
   "is_ippatsu": False,
+  "is_riichi": True,
+  "is_tenhou": False,
+  "is_chiihou": False,
   "is_rinshan": False,
-  "is_haitei": False}
+  }
 ```
 
 ### **4.2. 成功応答 (JSON)**
