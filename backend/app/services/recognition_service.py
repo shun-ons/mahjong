@@ -94,3 +94,4 @@ def detect_tiles(image_data: bytes) -> List[str]:
         raise NoTilesDetectedError("画像から牌を検出できませんでした。")
 
     return recognized_tiles
+
