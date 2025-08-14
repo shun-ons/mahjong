@@ -1,2 +1,3 @@
 mahjong_env
+# Pythonのコンパイル済みキャッシュ
 __pycache__/

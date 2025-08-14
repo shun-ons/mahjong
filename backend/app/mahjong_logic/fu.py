@@ -1,4 +1,4 @@
-from helpers import Tile, Meld
+from .helpers import Tile, Meld
 
 def calculate_fu(analysis: dict, melds: list[Meld], found_yaku: dict, game_state: dict) -> int:
     """
