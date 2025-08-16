@@ -1,9 +1,9 @@
 import collections
 from itertools import combinations
-from helpers import Meld, Tile
-from analyzer import HandAnalysis
-import yaku as YakuChecker
-import fu as FuCalculator
+from .helpers import Meld, Tile
+from .analyzer import HandAnalysis
+from . import yaku as YakuChecker
+from . import fu as FuCalculator
 
 # 牌の定義
 # 萬子: 1m-9m, 筒子: 1p-9p, 索子: 1s-9s, 字牌: 1z-7z (東南西北白發中)

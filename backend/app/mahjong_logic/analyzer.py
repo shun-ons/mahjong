@@ -1,4 +1,4 @@
-from helpers import Tile, Meld
+from .helpers import Tile, Meld
 import collections
 
 # 牌の定義
