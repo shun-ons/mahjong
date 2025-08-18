@@ -8,6 +8,8 @@ const formData = ref({
   dora_indicators: '',
   ura_dora_indicators: '',
   aka_dora_indicators: '',
+  agari_hai: '',
+  is_menzen: false,
   bakaze: '1z',
   jikaze: '1z',
   renchan: 0,
@@ -119,6 +121,14 @@ const sendData = () => {
 
         <fieldset>
           <legend>状況設定</legend>
+          <div class="form-group">
+            <label for="agari_hai">和了牌:</label>
+            <input type="text" id="agari_hai" name="agarihai" placeholder="例: 5m, 2p" v-model="formData.agari_hai" required>
+          </div>
+          <div class="form-group">
+            <label for="menzen">門前:</label>
+            <input type="checkbox" id="menzen" name="menzen" v-model="formData.is_menzen">
+          </div>
           <div class="form-group">
             <label for="bakaze">場風:</label>
             <select id="bakaze" name="bakaze" v-model="formData.bakaze" required>
