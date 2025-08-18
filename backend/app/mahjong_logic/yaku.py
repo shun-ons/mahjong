@@ -1,5 +1,8 @@
 import collections
 
+KAZEHAI = ['1z', '2z', '3z', '4z']
+SANGENPAI = ['5z', '6z', '7z']
+YAOCHUHAI = ['1m', '9m', '1p', '9p', '1s', '9s'] + KAZEHAI + SANGENPAI
 
 class YakuJudge:
     """
@@ -22,9 +25,6 @@ class YakuJudge:
         self.machi = analysis["machi"]
         self.melds = melds
         self.context = context
-        self.kazehai = ['1z', '2z', '3z', '4z']
-        self.sangenpai = ['5z', '6z', '7z']
-        self.yaochu_hai = ['1m', '9m', '1p', '9p', '1s', '9s'] + self.kazehai + self.sangenpai
         
     def check_all_yaku(self) -> dict:
         """
@@ -61,8 +61,8 @@ class YakuJudge:
         Returns:
             list[str]: 刻子の牌のリスト.
         """
-        kotsu_list = [list(set(m)) for m in self.mentsu if len(set(m)) == 1]
-        return sum(kotsu_list, [])
+        kotsu_list = [m[0] for m in self.mentsu if len(set(m)) == 1]
+        return kotsu_list
     
     # --- 1飜役の判定メソッド ---
     def _is_riiti(self) -> bool:
@@ -192,6 +192,92 @@ class YakuJudge:
         """
         # 么九中牌が含まれていないかをチェック
         for tile in self.hand:
-            if tile[0] in self.yaochu_hai:
+            if tile[0] in YAOCHUHAI:
                 return False
         return True
+    
+    def _is_haitei(self) -> bool:
+        """
+        海底摸月の判定を行う.
+        
+        Returns:
+            bool: 海底摸月が成立する場合はTrue, それ以外はFalse.
+        """
+        return self.context.get('is_haitei', False)
+    
+    def _is_houtei(self) -> bool:
+        """
+        河底撈魚の判定を行う.
+        
+        Returns:
+            bool: 河底撈魚が成立する場合はTrue, それ以外はFalse.
+        """
+        return self.context.get('is_houtei', False)
+    
+    def _is_rinshan(self) -> bool:
+        """
+        嶺上開花の判定を行う.
+        
+        Returns:
+            bool: 嶺上開花が成立する場合はTrue, それ以外はFalse.
+        """
+        return self.context.get('is_rinshan', False)
+    
+    def _is_chankan(self) -> bool:
+        """
+        槍槓の判定を行う.
+        
+        Returns:
+            bool: 槍槓が成立する場合はTrue, それ以外はFalse.
+        """
+        return self.context.get('is_chankan', False)
+    
+    # -- 2飜役の判定メソッド ---
+    def _is_double_riichi(self) -> bool:
+        """
+        ダブル立直の判定を行う.
+
+        Returns:
+            bool: ダブル立直が成立する場合はTrue, それ以外はFalse.
+        """
+        return self.context.get('is_double_riichi', False)
+    
+    def _is_sanshoku_doukou(self) -> bool:
+        """
+        三色同刻の判定を行う.
+        
+        Returns:
+            bool: 三色同刻が成立する場合はTrue, それ以外はFalse.
+        """
+        # 面子の刻子の枚数をカウント.
+        kotsu_list = self._get_kotsu()
+        # 3種類の刻子がそれぞれ1枚ずつあるかを確認.
+        if len(kotsu_list) < 3:
+            return False
+        # 三色同刻の条件を満たすかを確認.
+        number_kotsu = collections.defaultdict(set)
+        for tile in kotsu_list:
+            number = tile[0]
+            suit = tile[1]
+            if suit != 'z':  # 字牌は除外
+                number_kotsu[number].add(suit)
+        # 3種類の牌がそれぞれ1枚ずつあるかを確認.
+        for suits in number_kotsu.values():
+            if len(suits) == 3:
+                return True
+        return False
+    
+    def _is_sanankou(self) -> bool:
+        """
+        三暗刻の判定を行う.
+        
+        Returns:
+            bool: 三暗刻が成立する場合はTrue, それ以外はFalse.
+        """
+        # 面子の刻子の枚数をカウント.
+        kotsu_list = self._get_kotsu()
+        # 刻子が3つ以上あるかを確認.
+        if len(kotsu_list) < 3:
+            return False
+        # 全ての刻子が暗刻であるかを確認.
+        
