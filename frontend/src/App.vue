@@ -136,7 +136,7 @@ const sendData = () => {
               <option value="minkan">明槓</option>
               <option value="chakan">加槓</option>
             </select>
-            <input type="text" v-model="meld.tiles" placeholder="例: 1m,1m,1m" class="meld-tiles">
+            <input type="text" v-model="meld.tiles" placeholder="例: 1m,1m,1statm" class="meld-tiles">
             <button type="button" @click="removeMeld(index)" class="remove-btn">-</button>
           </div>
           <button type="button" @click="addMeld" class="add-btn">+ 鳴きを追加</button>
