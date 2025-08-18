@@ -14,11 +14,11 @@ import numpy as np
 from ultralytics import YOLO
 
 # --- 定数定義 ---
-MODEL_PATH: str = "/home/hamuro/Search/mahjong/runs_300/detect/mahjong_train/weights/best.pt"
+MODEL_PATH: str = "runs/detect/mahjong_train/weights/best.pt"
 CONFIDENCE_THRESHOLD: float = 0.5
 # ↓↓↓ 処理したい単一の画像ファイルのパスを指定してください ↓↓↓
-TARGET_IMAGE_PATH: str = "/home/hamuro/Search/mahjong/Mahjang.v1i.yolov8/test/LINE_ALBUM_麻雀2_250816_1.jpg"
-OUTPUT_FOLDER: str = "/home/hamuro/Search/mahjong/output/epoch300"
+TARGET_IMAGE_PATH: str = "Mahjang.v1i.yolov8/test/LINE_ALBUM_麻雀2_250816_1.jpg"
+OUTPUT_FOLDER: str = "output"
 
 # モデルのクラス名を指定形式の文字列に変換するための対応表
 TILE_NAME_MAP = {
