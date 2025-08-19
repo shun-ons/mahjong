@@ -38,8 +38,161 @@ class YakuJudge:
             dict: 役名と飜数の辞書.
         """
         yaku_dict = {}
-        # ここに役判定のロジックを実装する
-        # 例: yaku_dict['役名'] = 飜数.
+        is_menzen = self.context.get('is_menzen', False)
+        
+        # 国士無双の判定.
+        if self.type == 'kokushi':
+            if self._is_kokushi_13men_machi():
+                yaku_dict['国士無双13面待ち'] = 26
+            else:
+                yaku_dict['国士無双'] = 13
+        
+        # 七対子の判定.
+        elif self.type == 'chitoitsu':
+            # 字一色七対子は役満.
+            if self._is_tuuiisou():
+                yaku_dict['字一色'] = 13
+            # 通常の七対子.
+            yaku_dict['七対子'] = 2
+            if self._is_riiti():
+            # 複合役の判定.
+                yaku_dict['立直'] = 1
+            if self._is_ippatsu():
+                yaku_dict['一発'] = 1
+            if self._is_menzen_tsumo():
+                yaku_dict['門前清自摸和'] = 1
+            if self._is_tanyao():
+                yaku_dict['断么九'] = 1
+            if self._is_honroutou():
+                yaku_dict['混老頭'] = 2
+            if self._is_chinitsu():
+                yaku_dict['清一色'] = 6
+                
+                
+        # 通常の役の判定.
+        else:
+            # 役満の判定.
+            if self._is_daisuushi():
+                yaku_dict['大四喜'] = 26
+                return yaku_dict
+            normal, junsei = self._is_churenpoutou()
+            if normal:
+                if junsei:
+                    yaku_dict['純正九蓮宝燈'] = 26
+                    return yaku_dict
+                yaku_dict['九蓮宝燈'] = 13
+            normal, tanki = self._is_suuankou()
+            if normal:
+                if tanki:
+                    yaku_dict['四暗刻単騎待ち'] = 26
+                    return yaku_dict
+                yaku_dict['四暗刻'] = 13
+            if self._is_daisangen():
+                yaku_dict['大三元'] = 13
+            if self._is_suu_kantsu():
+                yaku_dict['四槓子'] = 13
+            if self._is_ryuuiisou():
+                yaku_dict['緑一色'] = 13
+            if self._is_tuuiisou():
+                yaku_dict['字一色'] = 13
+            if self._is_chinroutou():
+                yaku_dict['清老頭'] = 13
+            if self._is_shousuushi():
+                yaku_dict['小四喜'] = 13
+            if self.context.get('is_tenhou', False):
+                yaku_dict['天和'] = 13
+                return yaku_dict
+            if self.context.get('is_chiihou', False):
+                yaku_dict['地和'] = 13
+                return yaku_dict
+            # 役満は役満以外の役と複合しないため、ここで終了.
+            if len(yaku_dict) > 0:
+                return yaku_dict
+            
+            #  通常の役の判定.
+            if self._is_chinitsu():
+                if is_menzen:
+                    yaku_dict['清一色'] = 6
+                else:
+                    yaku_dict['清一色'] = 5
+            elif self._is_honitsu():
+                if is_menzen:
+                    yaku_dict['混一色'] = 3
+                else:
+                    yaku_dict['混一色'] = 2
+            if self._is_ryanpeiko():
+                yaku_dict['二盃口'] = 3
+            elif self._is_iipeko():
+                yaku_dict['一盃口'] = 1
+            if self._is_junchan():
+                if is_menzen:
+                    yaku_dict['純全帯么九'] = 3
+                else:
+                    yaku_dict['純全帯么九'] = 2
+            elif self._is_chanta():
+                if is_menzen:
+                    yaku_dict['混全帯么九'] = 2
+                else:
+                    yaku_dict['混全帯么九'] = 1
+            if self._is_ikkitsukan():
+                if is_menzen:
+                    yaku_dict['一気通貫'] = 2
+                else:
+                    yaku_dict['一気通貫'] = 1
+            if self._is_sanshoku_doujun():
+                if is_menzen:
+                    yaku_dict['三色同順'] = 2
+                else:
+                    yaku_dict['三色同順'] = 1
+            if self._is_honroutou():
+                yaku_dict['混老頭'] = 2
+            if self._is_shousangen():
+                yaku_dict['小三元'] = 2
+            if self._is_san_kantsu():
+                yaku_dict['三槓子'] = 2
+            if self._is_toitoi():
+                yaku_dict['対々和'] = 2
+            if self._is_san_ankou():
+                yaku_dict['三暗刻'] = 2
+            if self._is_sanshoku_doukou():
+                yaku_dict['三色同刻'] = 2
+            if self._is_double_riichi():
+                yaku_dict['ダブル立直'] = 2
+            if self._is_chankan():
+                yaku_dict['槍槓'] = 1
+            if self._is_rinshan():
+                yaku_dict['嶺上開花'] = 1
+            if self._is_haitei():
+                yaku_dict['海底摸月'] = 1
+            if self._is_houtei():
+                yaku_dict['河底撈魚'] = 1
+            if self._is_tanyao():
+                yaku_dict['断么九'] = 1
+            if self._is_jikaze():
+                yaku_dict['自風'] = 1
+            if self._is_bakaze():
+                yaku_dict['場風'] = 1
+            if self._is_haku():
+                yaku_dict['白'] = 1
+            if self._is_hatsu():
+                yaku_dict['發'] = 1
+            if self._is_chun():
+                yaku_dict['中'] = 1
+            if self._is_iipeko():
+                yaku_dict['一盃口'] = 1
+            if self._is_pinfu():
+                yaku_dict['平和'] = 1
+            if self._is_menzen_tsumo():
+                yaku_dict['門前清自摸和'] = 1
+            if self._is_ippatsu():
+                yaku_dict['一発'] = 1
+            if self._is_riiti():
+                yaku_dict['立直'] = 1
+            dora_count = self._is_dora()
+            if dora_count > 0:
+                yaku_dict['ドラ'] = dora_count
+        return yaku_dict
+            
         
     #-- 共通メソッド ---
     def _get_shuntsu_counts(self) -> collections.Counter:
@@ -103,6 +256,25 @@ class YakuJudge:
             bool: 一発が成立する場合はTrue, それ以外はFalse.
         """
         return self.context.get('is_ippatsu', False)
+    
+    def _is_dora(self) -> int:
+        """
+        ドラの枚数をカウントする関数.
+        ドラ、赤ドラ、裏ドラの合計を返す.
+        
+        Returns:
+            int: ドラ、赤ドラ、裏ドラの合計枚数.
+        """
+        dora = [d.strip() for d in self.context.get('dora_indicators', '').split(',') if not d.strip().isspace()]
+        ura_dora = [u_d.strip() for u_d in self.context.get('ura_dora_indicators', '').split(',') if not u_d.strip().isspace()]
+        akadora = ['5mr', '5pr', '5sr']  # 赤ドラの牌
+        dora_list = dora + ura_dora + akadora
+        dora_count = 0
+        
+        for tile in self.hand:
+            if tile in dora_list:
+                dora_count += 1
+        return dora_count
     
     def _is_menzen_tsumo(self) -> bool:
         """
@@ -439,7 +611,268 @@ class YakuJudge:
             bool: 混全帯么九が成立する場合はTrue, それ以外はFalse.
         """
         # 么九中牌が含まれているかをチェック
+        if self.janto not in YAOCHUHAI:
+            return False
+        for mentsu in self.mentsu_list:
+            yaochuhai_count = 0
+            for tile in mentsu:
+                if tile in YAOCHUHAI:
+                    yaochuhai_count += 1
+            # 面子に么九中牌が1枚以上含まれているかを確認
+            if yaochuhai_count == 0:
+                return False
+        return True
+    
+    # -- 3飜役の判定メソッド ---
+    def _is_ryanpeiko(self) -> bool:
+        """
+        二盃口の判定を行う.
+        
+        Returns:
+            bool: 二盃口が成立する場合はTrue, それ以外はFalse.
+        """
+        if not self.context.get('is_menzen', False):
+            return False
+        # 面子の順子の枚数をカウント.
+        shuntsu_counts = self._get_shuntsu_counts()
+        # 同じ順子が4つあるかを確認.
+        counts_value = list(shuntsu_counts.values())
+        return counts_value.count(2) == 2 or 4 in counts_value
+    
+    def _is_junchan(self) -> bool:
+        """
+        純全帯么九の判定を行う.
+        
+        Returns:
+            bool: 純全帯么九が成立する場合はTrue, それ以外はFalse.
+        """
+        iti_kyu_hai = [tile for tile in YAOCHUHAI if tile[1] != 'z']
+        # 么九中牌が含まれているかをチェック
+        if self.janto not in iti_kyu_hai:
+            return False
+        for mentsu in self.mentsu_list:
+            iti_kyu_count = 0
+            for tile in mentsu:
+                if tile in iti_kyu_hai:
+                    iti_kyu_count += 1
+            # 面子に么九中牌が1枚以上含まれているかを確認
+            if iti_kyu_count == 0:
+                return False
+        return True
+    
+    def _is_honitsu(self) -> bool:
+        """
+        混一色の判定を行う.
+        
+        Returns:
+            bool: 混一色が成立する場合はTrue, それ以外はFalse.
+        """
+        suit = ''
+        for tile in self.hand:
+            if tile[1] == 'z':
+                continue
+            if len(suit) == 0:
+                suit = tile[1]
+            elif suit != tile[1]:
+                return False
+        return True
+    
+    # --6飜役の判定メソッド ---
+    def _is_chinitsu(self) -> bool:
+        """
+        清一色の判定を行う.
+        
+        Returns:
+            bool: 清一色が成立する場合はTrue, それ以外はFalse.
+        """
+        suit = ''
+        for tile in self.hand:
+            if tile[1] == 'z':
+                False
+            if len(suit) == 0:
+                suit = tile[1]
+            elif suit != tile[1]:
+                return False
+        return True
+    
+    # --役満の判定メソッド ---
+    def _is_daisangen(self) -> bool:
+        """
+        大三元の判定を行う.
+        
+        Returns:
+            bool: 大三元が成立する場合はTrue, それ以外はFalse.
+        """
+        # 三元牌の刻子の枚数をカウント.
+        kotsu_list = self._get_kotsu()
+        kantsu_list = self._get_kantsu()
+        # 三元牌の刻子と槓子を合わせてカウント.
+        sangenpai_count = sum(1 for tile in kotsu_list + kantsu_list if tile in SANGENPAI)
+        # 大三元は、3種類の三元牌がすべて刻子であることを確認.
+        return sangenpai_count == 3
+    
+    def _is_suuankou(self) -> tuple[bool, bool]:
+        """
+        四暗刻の判定を行う.
+        
+        Returns:
+            tuple[bool, bool]: (四暗刻が成立するか、四暗刻単騎が成立するか).
+        """
+        if self.context.get('is_menzen', False):
+            return False
+        ankou_count = 0
+        called_mentsu_tuples = [tuple(sorted(called_mentsu.tiles)) for called_mentsu in self.called_mentsu_list]
+        
+        # 面子の刻子をチェック.
+        for mentsu in self.mentsu_list:
+            # 刻子でなければスキップ
+            if len(set(mentsu)) != 1:
+                continue
+            is_ankou = True
+            # 鳴いた面子（ポンなど）は暗刻ではない
+            if tuple(sorted(mentsu)) in called_mentsu_tuples:
+                is_ankou = False
+            # ロン和了りで、和了牌がこの刻子を完成させた場合も暗刻ではない
+            is_ron = not self.context.get('is_tsumo', False)
+            if is_ron and self.context.get('agari_hai') in mentsu:
+                is_ankou = False
+            if is_ankou:
+                ankou_count += 1
+        # 四暗刻は、暗刻が4つあることを確認.
+        return ankou_count == 4, self.machi == 'tankii'
+    
+    def _is_suu_kantsu(self) -> bool:
+        """
+        四槓子の判定を行う.
+        
+        Returns:
+            bool: 四槓子が成立する場合はTrue, それ以外はFalse.
+        """
+        kantsu_list = self._get_kantsu()
+        # 四槓子は、槓子が4つあることを確認.
+        return len(kantsu_list) == 4
+    
+    def _is_ryuuiisou(self) -> bool:
+        """
+        緑一色の判定を行う.
+        
+        Returns:
+            bool: 緑一色が成立する場合はTrue, それ以外はFalse.
+        """
+        green_tiles = ['2s', '3s', '4s', '6s', '8s', '9s', '6z']
+        for tile in self.hand:
+            if tile not in green_tiles:
+                return False
+        return True
+    
+    def _is_tuuiisou(self) -> bool:
+        """
+        字一色の判定を行う.
+        
+        Returns:
+            bool: 字一色が成立する場合はTrue, それ以外はFalse.
+        """
+        for tile in self.hand:
+            if tile[1] != 'z':
+                return False
+        return True
+    
+    def _is_chinroutou(self) -> bool:
+        """
+        清老頭の判定を行う.
+        
+        Returns:
+            bool: 清老頭が成立する場合はTrue, それ以外はFalse.
+        """
+        # 么九中牌が含まれているかをチェック
         for tile in self.hand:
             if tile not in YAOCHUHAI:
                 return False
         return True
+    
+    def _is_shousuushi(self) -> bool:
+        """
+        小四喜の判定を行う.
+        
+        Returns:
+            bool: 小四喜が成立する場合はTrue, それ以外はFalse.
+        """
+        # 雀頭が風牌であることを確認.
+        if not self.janto or self.janto not in KAZEHAI:
+            return False
+        # 風牌の刻子の枚数をカウント.
+        kotsu_list = self._get_kotsu()
+        kantsu_list = self._get_kantsu()
+        kazehai_count = sum(1 for tile in kotsu_list + kantsu_list if tile in KAZEHAI)
+        # 小四喜は、4種類の風牌のうち3種類が刻子であることを確認.
+        return kazehai_count == 3
+    
+    def _is_churenpoutou(self) -> tuple[bool, bool]:
+        """
+        九蓮宝燈の判定を行う.
+        
+        Returns:
+            tuple[bool, bool]: (九蓮宝燈が成立するか、純正九蓮宝燈が成立するか).
+        """
+        if self.context.get('is_menzen', False):
+            return False
+        # 面子の順子の枚数をカウント.
+        suit = self.hand[0][1]  # 全ての牌が同じ種類であることを確認
+        if suit == 'z':
+            return False
+        if not all(tile[1] == suit for tile in self.hand):
+            return False
+        # 基本形の確認(1,1,1,2,3,4,5,6,7,8,9,9,9)
+        number_counts = collections.Counter(tile[0] for tile in self.hand)
+        is_kyuuren_shape = True
+        if number_counts.get('1', 0) < 3 or number_counts.get('9', 0) < 3:
+            is_kyuuren_shape = False
+        for i in range(2, 9):
+            if number_counts.get(str(i), 0) < 1:
+                is_kyuuren_shape = False
+        if not is_kyuuren_shape:
+            return False, False
+        
+        # 九蓮宝燈の基本形が成立している場合、純正九蓮宝燈を確認
+        hand_before_win =self.hand[:]
+        hand_before_win.remove(self.context.get('agari_hai'))  # 雀頭を除外
+        is_junsei = True
+        tenpai_counts = collections.Counter(tile[0] for tile in hand_before_win)
+        # 純正九蓮宝燈は、1と9が2枚ずつ必要
+        if tenpai_counts.get('1', 0) != 2 or tenpai_counts.get('9', 0) != 2:
+            is_junsei = False
+        # 2から8までの牌が1枚ずつ必要
+        for i in range(2, 9):
+            if tenpai_counts.get(str(i), 0) != 1:
+                is_junsei = False
+        
+        return True, is_junsei
+    
+    def _is_daisuushi(self) -> bool:
+        """
+        大四喜の判定を行う.
+        
+        Returns:
+            bool: 大四喜が成立する場合はTrue, それ以外はFalse.
+        """
+        kotsu_list = self._get_kotsu()
+        kantsu_list = self._get_kantsu()
+        kazehai_count = sum(1 for tile in kotsu_list + kantsu_list if tile in KAZEHAI)
+        # 大四喜は、4種類の風牌がすべて刻子であることを確認.
+        return kazehai_count == 4
+    
+    def _is_kokushi_13men_machi(self) -> bool:
+        """
+        国士無双の13面待ちの判定を行う.
+        
+        Returns:
+            bool: 国士無双の13面待ちが成立する場合はTrue, それ以外はFalse.
+        """
+        hand_before_win = self.hand[:]
+        hand_before_win.remove(self.context.get('agari_hai'))
+        # 国士無双の13面待ちは、13種類の么九中牌がすべて含まれていることを確認
+        for tile in YAOCHUHAI:
+            if tile not in hand_before_win:
+                return False
+        # 13種類の牌がすべて含まれていることを確認
+        return len(set(hand_before_win)) == 13

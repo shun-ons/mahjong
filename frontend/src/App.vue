@@ -111,6 +111,7 @@ const sendData = () => {
 
         <fieldset>
           <legend>ドラ情報</legend>
+          <p>カンマ区切りで記述してください.</p>
           <div class="form-group">
             <label for="dora_indicators">ドラ:</label>
             <input type="text" id="dora_indicators" name="dora_indicators" placeholder="例: 5m, 2p" v-model="formData.dora_indicators">
