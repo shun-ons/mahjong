@@ -8,22 +8,22 @@ class YakuJudge:
     """
     手牌と状況を受け取り, 成立する役を判定するクラス.
     """
-    def __init__(self, analysis: dict, melds: list, context: dict):
+    def __init__(self, analysis: dict, called_mentsu_list: list, context: dict):
         """
         役判定に必要な情報を初期化する.
 
         Args:
             analysis (dict) : 手牌の分析結果.
-            melds (list)    : 鳴き牌のリスト.
+            called_mentsu_list (list)    : 鳴き牌のリスト.
             context (dict)  : 役判定に必要なコンテキスト情報.
                                 (例: is_tsumo, is_riichi, is_ippatsu, etc.)
         """
-        self.mentsu = analysis["mentsu"]
+        self.mentsu_list = analysis["mentsu"]
         self.janto = analysis["janto"]
-        self.hand = [self.janto, self.janto] + sum(self.mentsu, [])
+        self.hand = [self.janto, self.janto] + sum(self.mentsu_list, [])
         self.type = analysis["type"]
         self.machi = analysis["machi"]
-        self.melds = melds
+        self.called_mentsu_list = called_mentsu_list
         self.context = context
         
     def check_all_yaku(self) -> dict:
@@ -48,7 +48,7 @@ class YakuJudge:
         Returns:
             collections.Counter: 順子の牌の枚数をカウントしたCounterオブジェクト.
         """
-        shuntsu_list = [m for m in self.mentsu if len(set(m)) ==3]
+        shuntsu_list = [mentsu for mentsu in self.mentsu_list if len(set(mentsu)) ==3]
         if len(shuntsu_list) <2:
             return collections.Counter()
         shuntsu_tuple = [tuple(sorted(shunstu)) for shunstu in shuntsu_list]
@@ -61,8 +61,18 @@ class YakuJudge:
         Returns:
             list[str]: 刻子の牌のリスト.
         """
-        kotsu_list = [m[0] for m in self.mentsu if len(set(m)) == 1]
+        kotsu_list = [mentsu[0] for mentsu in self.mentsu_list if len(set(mentsu)) == 1]
         return kotsu_list
+    
+    def _get_kantsu(self) -> list[str]:
+        """
+        面子の槓子の枚数をカウントする関数.
+        
+        Returns:
+            list[str]: 槓子の牌のリスト.
+        """
+        kantsu_list = [mentsu[0] for mentsu in self.mentsu_list if len(set(mentsu)) == 4]
+        return kantsu_list
     
     # --- 1飜役の判定メソッド ---
     def _is_riiti(self) -> bool:
@@ -267,17 +277,33 @@ class YakuJudge:
                 return True
         return False
     
-    def _is_sanankou(self) -> bool:
+    def _is_san_ankou(self) -> bool:
         """
         三暗刻の判定を行う.
         
         Returns:
             bool: 三暗刻が成立する場合はTrue, それ以外はFalse.
         """
-        # 面子の刻子の枚数をカウント.
-        kotsu_list = self._get_kotsu()
-        # 刻子が3つ以上あるかを確認.
-        if len(kotsu_list) < 3:
-            return False
-        # 全ての刻子が暗刻であるかを確認.
+        ankou_count = 0
+        called_mentsu_tuples = [tuple(sorted(called_mentsu.tiles)) for called_mentsu in self.called_mentsu_list]
+
+        for mentsu in self.mentsu_list:
+            # 刻子でなければスキップ
+            if len(set(mentsu)) != 1:
+                continue
+
+            is_ankou = True
+            
+            # 鳴いた面子（ポンなど）は暗刻ではない
+            if tuple(sorted(mentsu)) in called_mentsu_tuples:
+                is_ankou = False
+            
+            # ロン和了りで、和了牌がこの刻子を完成させた場合も暗刻ではない
+            is_ron = not self.context.get('is_tsumo', False)
+            if is_ron and self.context.get('agari_hai') in mentsu:
+                is_ankou = False
+
+            if is_ankou:
+                ankou_count += 1
         
+        return ankou_count == 3

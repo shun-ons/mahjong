@@ -1,6 +1,6 @@
 import collections
 from itertools import combinations
-from .helpers import Meld, Tile
+from .helpers import Call, Tile
 from .analyzer import HandAnalysis
 from . import yaku as YakuChecker
 from . import fu as FuCalculator
@@ -34,14 +34,14 @@ YAOCHUHAI = {
 
 class MahjongScorer:
     def __init__(
-        self, hand: list[str], melds: list[Meld], agari_hai: str, **game_state
+        self, hand: list[str], called_mentsu: list[Call], agari_hai: str, **game_state
     ):
         """
         MahjongScorerの初期化.
 
         Args:
             hand (list[str]): 手牌のリスト (例: ["1m", "2m", "3m", "4m", "5m", "6m", "7m"])
-            melds (list[Meld]): 鳴きの情報 (例: [Meld("pon", ["1m", "2m", "3m"]), Meld("chi", ["4m", "5m", "6m"])])
+            called_mentsu (list[Call]): 鳴きの情報 (例: [Call("pon", ["1m", "2m", "3m"]), Call("chi", ["4m", "5m", "6m"])])
             agari_hai (str): アガリ牌の文字列 (例: "5m")
             game_state (dict): ゲームの状態（is_tsumo, is_oya など）を含む辞書.
                 例: {
@@ -57,7 +57,7 @@ class MahjongScorer:
                     "is_haitei": False}
         """
         self.hand = hand
-        self.melds = melds
+        self.called_mentsu = called_mentsu
         self.agari_hai = agari_hai
         self.game_state = game_state
 
@@ -77,7 +77,7 @@ class MahjongScorer:
         """
         # 手牌の解析を行う.
         analysis = HandAnalysis(
-            self.hand, self.melds, self.agari_hai
+            self.hand, self.called_mentsu, self.agari_hai
         ).agari_combinations
         if not analysis:
             return {"error": "アガリ形ではありません。"}
@@ -85,13 +85,13 @@ class MahjongScorer:
         best_analysis = analysis[0]
         # 役を計算.
         found_yaku, han = YakuChecker.check_all_yaku(
-            best_analysis, self.melds, self.game_state
+            best_analysis, self.called_mentsu, self.game_state
         )
         if han == 0:
             return {"error": "役がありません。"}
         # 符を計算.
         fu = FuCalculator.calculate_fu(
-            best_analysis, self.melds, found_yaku, self.game_state
+            best_analysis, self.called_mentsu, found_yaku, self.game_state
         )
         # ドラを計算.
         dora_han = self._count_dora()
@@ -123,7 +123,7 @@ class MahjongScorer:
             [Tile.next_tile(t) for t in ura_dora_indicators if t] if is_reach else []
         )
         # 全ての手牌を一つのリストにまとめる.
-        all_hand_tiles = self.hand + sum([m.tiles for m in self.melds], [])
+        all_hand_tiles = self.hand + sum([m.tiles for m in self.called_mentsu], [])
         dora_count = 0
         akadora_count = 0
         uradora_count = 0

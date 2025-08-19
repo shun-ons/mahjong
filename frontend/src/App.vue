@@ -21,7 +21,7 @@ const formData = ref({
   is_tenhou: false,
   is_chiihou: false,
   is_rinshan: false,
-  melds: []
+  called_mentsu_list: []
 });
 
 
@@ -44,15 +44,15 @@ const handleFileChange = (event) => {
 
 // 面前かどうかの管理.
 const isMenzen = computed(() => {
-  return formData.value.melds.length === 0;
+  return formData.value.called_mentsu_list.length === 0;
 });
 
 // 鳴き情報の追加・削除.
 const addMeld = () => {
-  formData.value.melds.push({type: 'pon', tiles: ''});
+  formData.value.called_mentsu_list.push({type: 'pon', tiles: ''});
 };
 const removeMeld = (index) => {
-  formData.value.melds.splice(index, 1);
+  formData.value.called_mentsu_list.splice(index, 1);
 };
 
 // データ送信用の関数
@@ -129,7 +129,7 @@ const sendData = () => {
 
         <fieldset>
           <legend>鳴き情報（副露）</legend>
-          <div v-for="(meld, index) in formData.melds" :key="index" class="meld-group">
+          <div v-for="(meld, index) in formData.called_mentsu_list" :key="index" class="meld-group">
             <select v-model="meld.type" class="meld-type">
               <option value="pon">ポン</option>
               <option value="chi">チー</option>

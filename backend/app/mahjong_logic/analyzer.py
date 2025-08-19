@@ -1,4 +1,4 @@
-from .helpers import Tile, Meld
+from .helpers import Tile, Call
 import collections
 
 # 牌の定義
@@ -16,17 +16,17 @@ SANGENPAI = {"5z", "6z", "7z"}
 
 class HandAnalysis:
     """手牌の解析（面子分解、待ちの形特定）を行うクラス"""
-    def __init__(self, hand: list[str], melds: list[Meld], agari_hai: str):
+    def __init__(self, hand: list[str], called_mentsu: list[Call], agari_hai: str):
         """
         手牌の解析を初期化する.
         
         Args:
             hand (list[str])  : 手牌のリスト (例: ["1m", "2m", "3m", "4m", "5m", "6m", "7m"])
-            melds (list[Meld]): 鳴きの情報 (例: [Meld("pon", [1m,2m,3m]), Meld("chi", [4m,5m,6m]) )
+            called_mentsu (list[Call]): 鳴きの情報 (例: [Call("pon", [1m,2m,3m]), Call("chi", [4m,5m,6m]) )
             agari_hai (str)   : アガリ牌の文字列 (例: "5m")
         """
         self.hand = sorted(hand, key=Tile.sort_key)
-        self.melds = melds
+        self.called_mentsu = called_mentsu
         self.agari_hai = agari_hai
         self.agari_combinations = self._analyze()
     
@@ -90,7 +90,7 @@ class HandAnalysis:
         """
         # 国士無双と七対子のチェック.
         counts = collections.Counter(self.hand)
-        if len(self.melds) == 0:
+        if len(self.called_mentsu) == 0:
             # 国士無双の判定.
             if all(t in counts for t in YAOCHUHAI) and len(counts) == 14:
                 return [{"type": "kokushi", "janto": self.agari_hai, "mentsu": []}]
@@ -102,7 +102,7 @@ class HandAnalysis:
         # 4面子1雀頭の解析.
         hand_counter = collections.Counter(self.hand)
         open_mentsu = []
-        for m in self.melds:
+        for m in self.called_mentsu:
             open_mentsu.append(m.tiles)
             for tile in m.tiles:
                 hand_counter[tile] -= 1

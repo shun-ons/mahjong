@@ -99,19 +99,19 @@ class Tile:
         return None
 
 
-class Meld:
+class Call:
     """鳴き（面子）の情報を扱うクラス"""
-    def __init__(self, meld_type: str, tiles: list[str]):
+    def __init__(self, call_type: str, tiles: list[str]):
         """
         鳴き（面子）の初期化.
         
         Args:
-            meld_type (str)  : 鳴きの種類 ("pon", "chi", "minkan", "ankan", "kakan")
+            call_type (str)  : 鳴きの種類 ("pon", "chi", "minkan", "kakan")
             tiles (list[str]): 鳴きに含まれる牌のリスト (例: ["1m", "2m", "3m"])
         """
-        self.meld_type = meld_type  # "pon", "chi", "minkan", "ankan", "kakan"
+        self.call_type = call_type  # "pon", "chi", "minkan", "kakan"
         self.tiles = sorted(tiles, key=Tile.sort_key)
-        self.is_open = meld_type != "ankan"
+        self.is_open = call_type != "ankan"
     
     def is_kotsu(self) -> bool:
         """
@@ -120,7 +120,7 @@ class Meld:
         Returns:
             bool: 鳴きが刻子ならTrue、そうでなければFalse.
         """
-        return self.meld_type in ["pon", "minkan", "ankan", "kakan"]
+        return self.call_type in ["pon", "minkan", "ankan", "kakan"]
     
     def is_shuntsu(self) -> bool:
         """
@@ -129,7 +129,25 @@ class Meld:
         Returns:
             bool: 鳴きが順子ならTrue、そうでなければFalse.
         """
-        return self.meld_type == "chi"
+        return self.call_type == "chi"
+    
+    def is_minkan(self) -> bool:
+        """
+        鳴きが明槓（ミンカン）かどうかを判定する関数.
+        
+        Returns:
+            bool: 鳴きが明槓ならTrue、そうでなければFalse.
+        """
+        return self.call_type == "minkan"
+    
+    def is_kakan(self) -> bool:
+        """
+        鳴きが加槓（カカン）かどうかを判定する関数.
+        
+        Returns:
+            bool: 鳴きが加槓ならTrue、そうでなければFalse.
+        """
+        return self.call_type == "kakan"
     
     def get_fu(self) -> int:
         """
@@ -142,12 +160,12 @@ class Meld:
         is_yaochu = Tile.is_yaochu(self.tiles[0])
         # 鳴きの種類に応じて符を計算.
         # ポン、チーの符計算.
-        if self.meld_type in ["pon", "chi"]:
+        if self.call_type in ["pon", "chi"]:
             base_fu = 2 if self.is_kotsu() else 0
             if not self.is_open: base_fu *= 2 # 暗刻の場合.
             if is_yaochu: base_fu *= 2
         # 明槓、暗槓、加槓の符計算.
-        elif self.meld_type in ["minkan", "ankan", "kakan"]:
+        elif self.call_type in ["minkan", "ankan", "kakan"]:
             base_fu = 8
             if not self.is_open: base_fu *= 2 # 暗槓の場合.
             if is_yaochu: base_fu *= 2
