@@ -1,5 +1,5 @@
 import collections
-from helpers import Tile, Call
+from .helpers import Tile, Call
 
 KAZEHAI = ['1z', '2z', '3z', '4z']
 SANGENPAI = ['5z', '6z', '7z']

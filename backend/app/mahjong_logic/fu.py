@@ -1,12 +1,12 @@
-from .helpers import Tile, Meld
+from .helpers import Tile, Call
 
-def calculate_fu(analysis: dict, melds: list[Meld], found_yaku: dict, game_state: dict) -> int:
+def calculate_fu(analysis: dict, melds: list[Call], found_yaku: dict, game_state: dict) -> int:
     """
     手牌の符を計算するメイン関数.
 
     Args:
         analysis (dict)   : HandAnalysisによる手牌の解析結果.
-        melds (list[Meld]): 鳴いた面子のリスト.
+        melds (list[Call]): 鳴いた面子のリスト.
         found_yaku (dict) : 成立した役の辞書.
         game_state (dict) : ゲームの状況設定.
 
@@ -41,13 +41,13 @@ def calculate_fu(analysis: dict, melds: list[Meld], found_yaku: dict, game_state
     return _round_up_fu(fu)
 
 
-def _get_mentsu_fu(analysis: dict, melds: list[Meld], game_state: dict) -> int:
+def _get_mentsu_fu(analysis: dict, melds: list[Call], game_state: dict) -> int:
     """
     面子（メンツ）に付く符を計算する.
     
     Args:
         analysis (dict)   : HandAnalysisによる手牌の解析結果.
-        melds (list[Meld]): 鳴いた面子のリスト.
+        melds (list[Call]): 鳴いた面子のリスト.
         game_state (dict) : ゲームの状況設定.
         
     Returns:
@@ -67,7 +67,7 @@ def _get_mentsu_fu(analysis: dict, melds: list[Meld], game_state: dict) -> int:
             mentsu_fu += base
     # 鳴いた面子（副露面子）の符
     for m in melds:
-        # Meldクラスのget_fuメソッドを呼び出す
+        # Callクラスのget_fuメソッドを呼び出す
         mentsu_fu += m.get_fu()
     return mentsu_fu
 
