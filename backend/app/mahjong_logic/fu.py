@@ -1,5 +1,39 @@
 from .helpers import Tile, Call
 
+
+def calculate_call_fu(call: Call) -> int:
+    """
+    鳴き面子（副露）の符を計算する。
+    暗刻の符はここでは計算しない。
+
+    Args:
+        meld (Call): 符を計算したい鳴き面子のCallオブジェクト。
+
+    Returns:
+        int: 計算された符。
+    """
+    # チーの符は0
+    if call.is_shuntsu():
+        return 0
+
+    base_fu = 0
+    is_yaochu = Tile.is_yaochu(call.tiles[0])
+
+    # 明刻（ポン）
+    if call.call_type == "pon":
+        base_fu = 2
+        if is_yaochu:
+            base_fu *= 2 # ヤオ九牌の明刻は符が2倍
+    
+    # 明槓・加槓
+    elif call.call_type in ["minkan", "kakan"]:
+        base_fu = 8
+        if is_yaochu:
+            base_fu *= 2 # ヤオ九牌の明槓は符が2倍
+            
+    return base_fu
+
+
 def calculate_fu(analysis: dict, melds: list[Call], found_yaku: dict, game_state: dict) -> int:
     """
     手牌の符を計算するメイン関数.
@@ -113,3 +147,39 @@ def _round_up_fu(fu: int) -> int:
         int: 切り上げた符の値（10の倍数）.
     """
     return -(-fu // 10) * 10
+
+
+from .helpers import Tile, Call # Callクラスをインポート
+
+# ▼▼▼ 新しい関数を作成 ▼▼▼
+def calculate_meld_fu(meld: Call) -> int:
+    """
+    鳴き面子（副露）の符を計算する。
+    暗刻の符はここでは計算しない。
+
+    Args:
+        meld (Call): 符を計算したい鳴き面子のCallオブジェクト。
+
+    Returns:
+        int: 計算された符。
+    """
+    # チーの符は0
+    if meld.is_shuntsu():
+        return 0
+
+    base_fu = 0
+    is_yaochu = Tile.is_yaochu(meld.tiles[0])
+
+    # 明刻（ポン）
+    if meld.call_type == "pon":
+        base_fu = 2
+        if is_yaochu:
+            base_fu *= 2 # ヤオ九牌の明刻は符が2倍
+    
+    # 明槓・加槓
+    elif meld.call_type in ["minkan", "kakan"]:
+        base_fu = 8
+        if is_yaochu:
+            base_fu *= 2 # ヤオ九牌の明槓は符が2倍
+            
+    return base_fu

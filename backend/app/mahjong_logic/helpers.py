@@ -109,6 +109,8 @@ class Call:
             call_type (str)  : 鳴きの種類 ("pon", "chi", "minkan", "kakan")
             tiles (list[str]): 鳴きに含まれる牌のリスト (例: ["1m", "2m", "3m"])
         """
+        if call_type == "ankan":
+            raise ValueError("Ankan (concealed kong) is not a call.")
         self.call_type = call_type  # "pon", "chi", "minkan", "kakan"
         self.tiles = sorted(tiles, key=Tile.sort_key)
         self.is_open = call_type != "ankan"
@@ -148,25 +150,3 @@ class Call:
             bool: 鳴きが加槓ならTrue、そうでなければFalse.
         """
         return self.call_type == "kakan"
-    
-    def get_fu(self) -> int:
-        """
-        鳴きの符を計算する関数.
-        
-        Returns:
-            int: 鳴きの符の値.
-        """
-        base_fu = 0
-        is_yaochu = Tile.is_yaochu(self.tiles[0])
-        # 鳴きの種類に応じて符を計算.
-        # ポン、チーの符計算.
-        if self.call_type in ["pon", "chi"]:
-            base_fu = 2 if self.is_kotsu() else 0
-            if not self.is_open: base_fu *= 2 # 暗刻の場合.
-            if is_yaochu: base_fu *= 2
-        # 明槓、暗槓、加槓の符計算.
-        elif self.call_type in ["minkan", "ankan", "kakan"]:
-            base_fu = 8
-            if not self.is_open: base_fu *= 2 # 暗槓の場合.
-            if is_yaochu: base_fu *= 2
-        return base_fu
