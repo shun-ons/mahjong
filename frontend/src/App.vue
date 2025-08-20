@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 // 送信データを定義.
 const formData = ref({
   image: null,
@@ -8,6 +8,7 @@ const formData = ref({
   dora_indicators: '',
   ura_dora_indicators: '',
   aka_dora_indicators: '',
+  agari_hai: '',
   bakaze: '1z',
   jikaze: '1z',
   renchan: 0,
@@ -16,13 +17,16 @@ const formData = ref({
   is_houtei: false,
   is_ippatsu: false,
   is_riichi: false,
+  is_double_riichi: false,
   is_tenhou: false,
   is_chiihou: false,
   is_rinshan: false,
+  called_mentsu_list: []
 });
 
-// 麻雀牌の記述ルール.
-const isModalVisible = ref(false); // ポップアップの表示状態 (最初は非表示)
+
+const isModalVisible = ref(false); 
+// ポップアップの表示状態を管理する変数.
 const openModal = () => {
   isModalVisible.value = true;
 };
@@ -30,29 +34,35 @@ const closeModal = () => {
   isModalVisible.value = false;
 };
 
-/**
- * ファイル選択時の処理
- * 選択されたファイルをformDataに設定する.
- * @param event ファイル選択イベント.
- */
+// ファイル選択時の処理
 const handleFileChange = (event) => {
   const file = event.target.files[0];
   if (file) {
-    formData.value.image = file; // 選択されたファイルをformDataに設定
+    formData.value.image = file; // 選択されたファイルをformDataに設定.
   }
 };
 
-/**
- * フォーム送信時の処理
- * 送信データをFormDataオブジェクトに変換して送信する.
- */
+// 面前かどうかの管理.
+const isMenzen = computed(() => {
+  return formData.value.called_mentsu_list.length === 0;
+});
+
+// 鳴き情報の追加・削除.
+const addMeld = () => {
+  formData.value.called_mentsu_list.push({type: 'pon', tiles: ''});
+};
+const removeMeld = (index) => {
+  formData.value.called_mentsu_list.splice(index, 1);
+};
+
+// データ送信用の関数
 const sendData = () => {
-  // FormDataオブジェクトを作成
   const submissionData = new FormData();
-  // formDataの各フィールドをFormDataに追加
   for (const key in formData.value) {
     submissionData.append(key, formData.value[key]);
   }
+  // 面前情報を追加.
+  submissionData.append('is_menzen', isMenzen.value); 
   // サーバにデータを送信する.
   fetch('/api/calculate', {
     method: 'POST',
@@ -101,6 +111,7 @@ const sendData = () => {
 
         <fieldset>
           <legend>ドラ情報</legend>
+          <p>カンマ区切りで記述してください.</p>
           <div class="form-group">
             <label for="dora_indicators">ドラ:</label>
             <input type="text" id="dora_indicators" name="dora_indicators" placeholder="例: 5m, 2p" v-model="formData.dora_indicators">
@@ -118,7 +129,29 @@ const sendData = () => {
         </fieldset>
 
         <fieldset>
+          <legend>鳴き情報（副露）</legend>
+          <div v-for="(meld, index) in formData.called_mentsu_list" :key="index" class="meld-group">
+            <select v-model="meld.type" class="meld-type">
+              <option value="pon">ポン</option>
+              <option value="chi">チー</option>
+              <option value="minkan">明槓</option>
+              <option value="chakan">加槓</option>
+            </select>
+            <input type="text" v-model="meld.tiles" placeholder="例: 1m,1m,1statm" class="meld-tiles">
+            <button type="button" @click="removeMeld(index)" class="remove-btn">-</button>
+          </div>
+          <button type="button" @click="addMeld" class="add-btn">+ 鳴きを追加</button>
+          
+          <button type="button" @click="openModal" class="help-btn"> ？</button>
+          <span>書き方</span>
+        </fieldset>
+
+        <fieldset>
           <legend>状況設定</legend>
+          <div class="form-group">
+            <label for="agari_hai">和了牌:</label>
+            <input type="text" id="agari_hai" name="agarihai" placeholder="例: 5m, 2p" v-model="formData.agari_hai" required>
+          </div>
           <div class="form-group">
             <label for="bakaze">場風:</label>
             <select id="bakaze" name="bakaze" v-model="formData.bakaze" required>
@@ -149,6 +182,10 @@ const sendData = () => {
             <div class="checkbox-item">
               <input type="checkbox" id="is_riichi" v-model="formData.is_riichi">
               <label for="is_riichi">立直</label>
+            </div>
+            <div class="checkbox-item">
+              <input type="checkbox" id="is_double_riichi" v-model="formData.is_double_riichi">
+              <label for="is_double_riichi">ダブル立直</label>
             </div>
             <div class="checkbox-item">
               <input type="checkbox" id="is_ippatsu" v-model="formData.is_ippatsu">
@@ -479,6 +516,61 @@ legend {
   padding: 2px 6px;
   border-radius: 4px;
   font-family: monospace;
+}
+
+/* 鳴き情報の各行 */
+.meld-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.meld-type {
+  flex: 1;
+  padding: 0.75rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 1rem;
+}
+
+.meld-tiles {
+  flex: 2;
+  padding: 0.75rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 1rem;
+}
+
+.add-btn, .remove-btn {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background-color: #f0f0f0;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.add-btn {
+  border-color: #00796b;
+  color: #00796b;
+  width: 100%;
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+  padding: 0.75rem;
+}
+
+.remove-btn {
+  border-color: #d32f2f;
+  color: #d32f2f;
+}
+
+.add-btn:hover {
+  background-color: #e8f0e8;
+}
+
+.remove-btn:hover {
+  background-color: #fbe9e7;
 }
 </style>
 

@@ -18,7 +18,7 @@ from flask.wrappers import Response
 
 # 依存モジュールのインポート
 # mahjong_logicsパッケージから各モジュールをインポート
-from .mahjong_logic.helpers import Meld
+from .mahjong_logic.helpers import Call
 from .mahjong_logic.scorer import MahjongScorer
 
 # servicesパッケージからモジュールをインポート
@@ -82,12 +82,12 @@ def calculate_score_endpoint() -> tuple[Response, int]:
             return jsonify({"status": "error", "message": str(e)}), 400
 
         # 5. 点数計算
-        melds_data = game_info.get('melds', [])
-        melds = [Meld(m['type'], m['tiles']) for m in melds_data]
+        called_mentsu_list_data = game_info.get('called_mentsu_list', [])
+        called_mentsu_list = [Call(m['type'], m['tiles']) for m in called_mentsu_list_data]
 
         scorer = MahjongScorer(
             hand=hand_list,
-            melds=melds,
+            called_mentsu_list=called_mentsu_list,
             **game_info
         )
         score_data = scorer.calculate()
@@ -97,7 +97,7 @@ def calculate_score_endpoint() -> tuple[Response, int]:
 
         # 6. 応答生成
         final_score = score_data.get("score", {}).get("total", 0)
-        full_hand = sorted(hand_list + sum([m.tiles for m in melds], []))
+        full_hand = sorted(hand_list + sum([called_mentsu.tiles for called_mentsu in called_mentsu_list], []))
         yaku_list = list(score_data.get("yaku", {}).keys())
 
         response_data = {
