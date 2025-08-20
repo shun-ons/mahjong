@@ -88,7 +88,7 @@ class FuCalculator:
             is_ron_kotsu = not is_tsumo and (agari_hai in meld)
             
             if is_kantsu:
-                base = 8 if is_open else 16 # 明槓:16, 暗槓:32
+                base = 8 if is_open else 16 # 明槓:8, 暗槓:16
             else: # 刻子
                 base = 2 if (is_open or is_ron_kotsu) else 4 # 明刻:2, 暗刻:4
 
@@ -123,8 +123,9 @@ class FuCalculator:
     def _get_machi_fu(self) -> int:
         """待ちの形に付く符を計算する。"""
         machi = self.analysis.get("machi")
+        fu = 0
         if machi in ['kanchan', 'penchan', 'tanki']:
-            return 2
+            fu += 2
         return 0
 
     def _round_up_fu(self, fu: int) -> int:
