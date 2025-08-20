@@ -3,7 +3,7 @@ from itertools import combinations
 from .helpers import Call, Tile
 from .analyzer import HandAnalysis
 from . import yaku as YakuChecker
-from . import fu as FuCalculator
+from .fu import FuCalculator
 
 # 牌の定義
 # 萬子: 1m-9m, 筒子: 1p-9p, 索子: 1s-9s, 字牌: 1z-7z (東南西北白發中)
@@ -90,7 +90,7 @@ class MahjongScorer:
         if han == 0:
             return {"error": "役がありません。"}
         # 符を計算.
-        fu = FuCalculator.calculate_fu(
+        fu = FuCalculator.calculate(
             best_analysis, self.called_mentsu, found_yaku, self.game_state
         )
         # ドラを計算.
