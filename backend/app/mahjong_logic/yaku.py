@@ -23,7 +23,7 @@ class YakuJudge:
         self.janto = analysis["janto"]
         self.hand = [self.janto, self.janto] + sum(self.mentsu_list, [])
         self.type = analysis["type"]
-        self.machi = analysis["machi"]
+        self.machi = analysis.get("machi", "ryanmen")
         self.called_mentsu_list = called_mentsu_list
         self.context = context
         
@@ -84,12 +84,12 @@ class YakuJudge:
             normal, tanki = self._is_suuankou()
             if normal:
                 if tanki:
-                    yaku_dict['四暗刻単騎待ち'] = 26
+                    yaku_dict['四暗刻単騎'] = 26
                     return yaku_dict
                 yaku_dict['四暗刻'] = 13
             if self._is_daisangen():
                 yaku_dict['大三元'] = 13
-            if self._is_suu_kantsu():
+            if self._is_suukantsu():
                 yaku_dict['四槓子'] = 13
             if self._is_ryuuiisou():
                 yaku_dict['緑一色'] = 13
@@ -148,11 +148,11 @@ class YakuJudge:
                 yaku_dict['混老頭'] = 2
             if self._is_shousangen():
                 yaku_dict['小三元'] = 2
-            if self._is_san_kantsu():
+            if self._is_sankantsu():
                 yaku_dict['三槓子'] = 2
             if self._is_toitoi():
                 yaku_dict['対々和'] = 2
-            if self._is_san_ankou():
+            if self._is_sanankou():
                 yaku_dict['三暗刻'] = 2
             if self._is_sanshoku_doukou():
                 yaku_dict['三色同刻'] = 2
@@ -178,8 +178,7 @@ class YakuJudge:
                 yaku_dict['發'] = 1
             if self._is_chun():
                 yaku_dict['中'] = 1
-            if self._is_iipeko():
-                yaku_dict['一盃口'] = 1
+
             if self._is_pinfu():
                 yaku_dict['平和'] = 1
             if self._is_menzen_tsumo():
@@ -293,9 +292,9 @@ class YakuJudge:
             bool: 平和が成立する場合はTrue, それ以外はFalse.
         """
         # 平和は門前で、両面待ちで、雀頭が役牌でないことが条件
-        if (not self.context.get('is_menzen', False)) and \
+        if self.context.get('is_menzen', False) and \
             (self.machi == 'ryanmen') and\
-            (self.janto not in self.yaochu_hai):
+            (self.janto not in YAOCHUHAI):
             return True
         return False
     
@@ -307,7 +306,7 @@ class YakuJudge:
             bool: 一盃口が成立する場合はTrue, それ以外はFalse.
         """
         # 面前の確認.
-        if self.context.get('is_menzen', False):
+        if not self.context.get('is_menzen', False):
             return False
         # 面子の順子の枚数をカウント.
         shuntsu_counts = self._get_shuntsu_counts()
@@ -385,7 +384,7 @@ class YakuJudge:
         """
         # 么九中牌が含まれていないかをチェック
         for tile in self.hand:
-            if tile[0] in YAOCHUHAI:
+            if tile in YAOCHUHAI:
                 return False
         return True
     
@@ -460,7 +459,7 @@ class YakuJudge:
                 return True
         return False
     
-    def _is_san_ankou(self) -> bool:
+    def _is_sanankou(self) -> bool:
         """
         三暗刻の判定を行う.
         
@@ -501,15 +500,18 @@ class YakuJudge:
         # 刻子が4つ以上、順子が0つであれば対々和
         return (len(kotsu_list) + len(kantsu_list)) == 4
     
-    def _is_san_kantsu(self) -> bool:
+    def _is_sankantsu(self) -> bool:
         """
         三槓子の判定を行う.
         
         Returns:
             bool: 三槓子が成立する場合はTrue, それ以外はFalse.
         """
-        kantsu_list = self._get_kantsu()
-        return len(kantsu_list) == 3
+        kantsu_count = 0
+        for mentsu in self.mentsu_list:
+            if len(mentsu) == 4:
+                kantsu_count += 1
+        return kantsu_count == 3
     
     def _is_shousangen(self) -> bool:
         """
@@ -584,7 +586,7 @@ class YakuJudge:
         shuntsu_groups = collections.defaultdict(set)
         for shuntsu in shuntsu_list:
             suit = shuntsu[0][1]  # 種類部分 (例: 'm')
-            shuntsu_groups[suit].append(tuple(sorted(shuntsu, key=Tile.sort_key)))
+            shuntsu_groups[suit].add(tuple(sorted(shuntsu, key=Tile.sort_key)))
             
         for suit, shuntsu_in_suit in shuntsu_groups.items():
             if suit == 'z':
@@ -646,17 +648,10 @@ class YakuJudge:
         Returns:
             bool: 純全帯么九が成立する場合はTrue, それ以外はFalse.
         """
-        iti_kyu_hai = [tile for tile in YAOCHUHAI if tile[1] != 'z']
-        # 么九中牌が含まれているかをチェック
-        if self.janto not in iti_kyu_hai:
+        if not self._is_chanta():
             return False
-        for mentsu in self.mentsu_list:
-            iti_kyu_count = 0
-            for tile in mentsu:
-                if tile in iti_kyu_hai:
-                    iti_kyu_count += 1
-            # 面子に么九中牌が1枚以上含まれているかを確認
-            if iti_kyu_count == 0:
+        for tile in self.hand:
+            if tile[1] == 'z':
                 return False
         return True
     
@@ -718,8 +713,8 @@ class YakuJudge:
         Returns:
             tuple[bool, bool]: (四暗刻が成立するか、四暗刻単騎が成立するか).
         """
-        if self.context.get('is_menzen', False):
-            return False
+        if not self.context.get('is_menzen', False):
+            return False, False
         ankou_count = 0
         called_mentsu_tuples = [tuple(sorted(called_mentsu.tiles)) for called_mentsu in self.called_mentsu_list]
         
@@ -741,17 +736,20 @@ class YakuJudge:
         # 四暗刻は、暗刻が4つあることを確認.
         return ankou_count == 4, self.machi == 'tankii'
     
-    def _is_suu_kantsu(self) -> bool:
+    def _is_suukantsu(self) -> bool:
         """
         四槓子の判定を行う.
         
         Returns:
             bool: 四槓子が成立する場合はTrue, それ以外はFalse.
         """
-        kantsu_list = self._get_kantsu()
+        kantsu_count = 0
+        for mentsu in self.mentsu_list:
+            if len(mentsu) == 4:
+                kantsu_count += 1
         # 四槓子は、槓子が4つあることを確認.
-        return len(kantsu_list) == 4
-    
+        return kantsu_count == 4
+
     def _is_ryuuiisou(self) -> bool:
         """
         緑一色の判定を行う.
@@ -785,8 +783,9 @@ class YakuJudge:
             bool: 清老頭が成立する場合はTrue, それ以外はFalse.
         """
         # 么九中牌が含まれているかをチェック
+        chinroutou_tiles = {"1m", "9m", "1p", "9p", "1s", "9s"}
         for tile in self.hand:
-            if tile not in YAOCHUHAI:
+            if tile not in chinroutou_tiles:
                 return False
         return True
     
@@ -814,14 +813,14 @@ class YakuJudge:
         Returns:
             tuple[bool, bool]: (九蓮宝燈が成立するか、純正九蓮宝燈が成立するか).
         """
-        if self.context.get('is_menzen', False):
-            return False
+        if not self.context.get('is_menzen', False):
+            return False, False
         # 面子の順子の枚数をカウント.
         suit = self.hand[0][1]  # 全ての牌が同じ種類であることを確認
         if suit == 'z':
-            return False
+            return False, False
         if not all(tile[1] == suit for tile in self.hand):
-            return False
+            return False, False
         # 基本形の確認(1,1,1,2,3,4,5,6,7,8,9,9,9)
         number_counts = collections.Counter(tile[0] for tile in self.hand)
         is_kyuuren_shape = True

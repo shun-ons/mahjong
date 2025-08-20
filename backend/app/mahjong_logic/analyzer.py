@@ -107,7 +107,7 @@ class HandAnalysis:
         if len(self.called_mentsu) == 0:
             # 国士無双の判定.
             if set(counts.keys()) == YAOCHUHAI:
-                return [{"type": "kokushi", "janto": self.agari_hai, "mentsu": []}]
+                return [{"type": "kokushi", "janto": self.agari_hai, "mentsu": [self.hand]}]
             # 七対子の判定.
             if len(counts) == 7 and all(c == 2 for c in counts.values()):
                 machi_type = "tanki" # 七対子は単騎待ち.
