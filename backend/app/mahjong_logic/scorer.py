@@ -32,12 +32,17 @@ YAOCHUHAI = {
 }
 
 class MahjongScorer:
-    def __init__(
-        self, hand: list[str], called_mentsu: list[Call], agari_hai: str, **game_state
-    ):
+    def __init__(self, hand: list[str], called_mentsu: list[Call], **game_state):
+        """
+        麻雀のスコア計算を行うクラス.
+
+        Args:
+            hand (list[str])          : 手牌のリスト.
+            called_mentsu (list[Call]): 鳴きの面子リスト.
+            game_state (dict)         : ゲームの状態情報.
+        """
         self.hand = hand
         self.called_mentsu = called_mentsu
-        self.agari_hai = agari_hai
         self.game_state = game_state
 
     def calculate(self) -> dict:
@@ -47,7 +52,7 @@ class MahjongScorer:
         """
         # 1. 手牌を解析し、考えられる全ての和了パターンを取得
         analysis_patterns = HandAnalysis(
-            self.hand, self.called_mentsu, self.agari_hai
+            self.hand, self.called_mentsu, self.game_state.get("agari_hai", "")
         ).agari_combinations
         
         if not analysis_patterns:
@@ -141,7 +146,7 @@ class MahjongScorer:
         elif han >= 5 or (han == 4 and fu >= 40) or (han == 3 and fu >= 70):
             score_name, base_p = "満貫", 2000
         else:
-            score_name = f"{han}翻{fu}符"
+            score_name = ""
             base_p = fu * (2 ** (han + 2))
             if base_p > 2000:
                 base_p = 2000

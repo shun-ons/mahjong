@@ -6,24 +6,18 @@ Flaskアプリケーションのエンドポイントを定義する。
 適切なサービス（牌認識、点数計算）を呼び出し、
 最終的な結果をJSON形式でクライアントに返却する。
 """
-
-
 # --- モジュールのインポート ---
 # 標準モジュールのインポート
 import json
 import traceback
-
 from flask import Blueprint, jsonify, request
 from flask.wrappers import Response
-
 # 依存モジュールのインポート
 # mahjong_logicsパッケージから各モジュールをインポート
 from .mahjong_logic.helpers import Call
 from .mahjong_logic.scorer import MahjongScorer
-
 # servicesパッケージからモジュールをインポート
-from .services.recognition_service import (NoTilesDetectedError,
-                                            detect_tiles)
+from .services.recognition_service import (NoTilesDetectedError, detect_tiles)
 
 
 # --- Blueprintの作成 ---
@@ -72,8 +66,11 @@ def calculate_score_endpoint() -> tuple[Response, int]:
 
         # 4. 牌検出
         try:
-            image_data = image_file.read()
-            hand_list = detect_tiles(image_data)
+            # image_data = image_file.read()
+            # hand_list = detect_tiles(image_data)
+            
+            # テスト用の仮リスト.
+            hand_list = ["1m","2m","3m","2p","3p","4p","5s","6s","7s","1z","1z","1z", "5z", "5z"]
         except NoTilesDetectedError as e:
             # 牌が検出できなかった場合
             return jsonify({"status": "error", "message": str(e)}), 400
@@ -83,11 +80,11 @@ def calculate_score_endpoint() -> tuple[Response, int]:
 
         # 5. 点数計算
         called_mentsu_list_data = game_info.get('called_mentsu_list', [])
-        called_mentsu_list = [Call(m['type'], m['tiles']) for m in called_mentsu_list_data]
+        called_mentsu_list = [Call(m['type'], m['tiles'].split(',')) for m in called_mentsu_list_data]
 
         scorer = MahjongScorer(
             hand=hand_list,
-            called_mentsu_list=called_mentsu_list,
+            called_mentsu=called_mentsu_list,
             **game_info
         )
         score_data = scorer.calculate()
@@ -96,21 +93,24 @@ def calculate_score_endpoint() -> tuple[Response, int]:
             return jsonify({"status": "error", "message": score_data['error']}), 400
 
         # 6. 応答生成
-        final_score = score_data.get("score", {}).get("total", 0)
-        full_hand = sorted(hand_list + sum([called_mentsu.tiles for called_mentsu in called_mentsu_list], []))
+        # final_score = score_data.get("score", {}).get("total", 0)
+        # full_hand = sorted(hand_list + sum([called_mentsu.tiles for called_mentsu in called_mentsu_list], []))
         yaku_list = list(score_data.get("yaku", {}).keys())
 
         response_data = {
             "status": "success",
             "data": {
-                "hand": full_hand,
+                "hand": hand_list,
                 "yaku": yaku_list,
                 "han": score_data.get("han", 0),
                 "fu": score_data.get("fu", 0),
                 "score_name": score_data.get("score_name", ""),
-                "score": final_score,
             },
         }
+        for key, value in score_data.get("score", {}).items():
+            response_data["data"][key] = value
+            
+        print(response_data)  # デバッグ用
         return jsonify(response_data), 200
 
     except Exception as e:

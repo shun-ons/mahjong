@@ -8,18 +8,18 @@ class FuCalculator:
     """
     手牌の符計算を責務に持つクラス。
     """
-    def __init__(self, analysis: dict, melds: list[Call], found_yaku: dict, game_state: dict):
+    def __init__(self, analysis: dict, called_mentsu: list[Call], found_yaku: dict, game_state: dict):
         """
         符計算に必要な情報を初期化する。
 
         Args:
             analysis (dict)   : HandAnalysisによる手牌の解析結果。
-            melds (list[Call]): 鳴いた面子のリスト。
+            called_mentsu (list[Call]): 鳴いた面子のリスト。
             found_yaku (dict) : 成立した役の辞書。
             game_state (dict) : ゲームの状況設定。
         """
         self.analysis = analysis
-        self.melds = melds
+        self.called_mentsu = called_mentsu
         self.found_yaku = found_yaku
         self.game_state = game_state
 
@@ -42,7 +42,7 @@ class FuCalculator:
         fu = 20
 
         # --- ステップ3：アガリ方の符 ---
-        is_menzen = not self.melds
+        is_menzen = not self.called_mentsu
         is_tsumo = self.game_state.get("is_tsumo", False)
         
         if is_menzen and not is_tsumo:
@@ -68,7 +68,7 @@ class FuCalculator:
         is_tsumo = self.game_state.get("is_tsumo", False)
         
         # 鳴き面子の情報を比較しやすいようにタプルのセットに変換
-        open_melds_tuples = {tuple(m.tiles) for m in self.melds}
+        called_mentsu_tuples = {tuple(m.tiles) for m in self.called_mentsu}
 
         for meld in self.analysis.get("mentsu", []):
             # 順子の符は0
@@ -82,8 +82,8 @@ class FuCalculator:
             is_kantsu = len(meld) == 4
             
             # 鳴いているか（明刻/明槓）どうかを判定
-            is_open = tuple(sorted(meld, key=Tile.sort_key)) in open_melds_tuples
-            
+            is_open = tuple(sorted(meld, key=Tile.sort_key)) in called_mentsu_tuples
+
             # ロンで完成した刻子は明刻扱い
             is_ron_kotsu = not is_tsumo and (agari_hai in meld)
             
