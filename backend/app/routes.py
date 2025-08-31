@@ -40,48 +40,60 @@ def calculate_score_endpoint() -> tuple[Response, int]:
     Returns:
         FlaskのResponseオブジェクトとHTTPステータスコードのタプル。
     """
-    # 3. 入力値検証
-    if 'image' not in request.files:
-        err_msg = "「画像ファイル」がリクエストに含まれていません。"
-        return jsonify({"status": "error", "message": err_msg}), 400
-
-    if 'game_info' not in request.form:
-        err_msg = "「対局情報」がリクエストに含まれていません。"
-        return jsonify({"status": "error", "message": err_msg}), 400
-
-    image_file = request.files['image']
-    game_info_str = request.form['game_info']
-
-    if not image_file or image_file.filename == '':
-        err_msg = "画像ファイルが選択されていません。"
-        return jsonify({"status": "error", "message": err_msg}), 400
-
+    print('ok!!')
     try:
-        # JSON文字列の解析
-        try:
-            game_info = json.loads(game_info_str)
-        except json.JSONDecodeError:
-            err_msg = "対局情報のJSON形式が正しくありません。"
-            return jsonify({"status": "error", "message": err_msg}), 400
+        if request.is_json:
+            json_data = request.get_json()
+            if not json_data or 'game_info' not in json_data:
+                err_msg = "「対局情報」がリクエストに含まれていません。"
+                return jsonify({"status": "error", "message": err_msg}), 400
+            game_info = json_data['game_info']
+            if 'hand' not in game_info:
+                err_msg = "「手牌」が対局情報に含まれていません。"
+                return jsonify({"status": "error", "message": err_msg}), 400
+            hand_list = game_info['hand']
+        else:
+            # 3. 入力値検証
+            if 'image' not in request.files:
+                err_msg = "「画像ファイル」がリクエストに含まれていません。"
+                return jsonify({"status": "error", "message": err_msg}), 400
 
-        # 4. 牌検出
-        try:
-            # image_data = image_file.read()
-            # hand_list = detect_tiles(image_data)
-            
-            # テスト用の仮リスト.
-            hand_list = ["1m","2m","3m","2p","3p","4p","5s","6s","7s","1z","1z","1z", "5z", "5z"]
-        except NoTilesDetectedError as e:
-            # 牌が検出できなかった場合
-            return jsonify({"status": "error", "message": str(e)}), 400
-        except ValueError as e:
-            # 画像データが不正な場合
-            return jsonify({"status": "error", "message": str(e)}), 400
+            if 'game_info' not in request.form:
+                err_msg = "「対局情報」がリクエストに含まれていません。"
+                return jsonify({"status": "error", "message": err_msg}), 400
+
+            image_file = request.files['image']
+            game_info_str = request.form['game_info']
+
+            if not image_file or image_file.filename == '':
+                err_msg = "画像ファイルが選択されていません。"
+                return jsonify({"status": "error", "message": err_msg}), 400
+                # JSON文字列の解析
+            try:
+                game_info = json.loads(game_info_str)
+            except json.JSONDecodeError:
+                err_msg = "対局情報のJSON形式が正しくありません。"
+                return jsonify({"status": "error", "message": err_msg}), 400
+
+            # 4. 牌検出
+            try:
+                # image_data = image_file.read()
+                # hand_list = detect_tiles(image_data)
+                
+                # テスト用の仮リスト.
+                hand_list = ["1m","2m","3m","2p","3p","4p","5s","6s","7s","1z","1z","1z", "5z", "5z"]
+            except NoTilesDetectedError as e:
+                # 牌が検出できなかった場合
+                return jsonify({"status": "error", "message": str(e)}), 400
+            except ValueError as e:
+                # 画像データが不正な場合
+                return jsonify({"status": "error", "message": str(e)}), 400
 
         # 5. 点数計算
         called_mentsu_list_data = game_info.get('called_mentsu_list', [])
         called_mentsu_list = [Call(m['type'], m['tiles'].split(',')) for m in called_mentsu_list_data]
 
+        game_info.pop('hand', None)
         scorer = MahjongScorer(
             hand=hand_list,
             called_mentsu=called_mentsu_list,
@@ -97,6 +109,7 @@ def calculate_score_endpoint() -> tuple[Response, int]:
         # full_hand = sorted(hand_list + sum([called_mentsu.tiles for called_mentsu in called_mentsu_list], []))
         yaku_list = list(score_data.get("yaku", {}).keys())
 
+        print([m.tiles for m in called_mentsu_list])
         response_data = {
             "status": "success",
             "data": {
@@ -105,6 +118,7 @@ def calculate_score_endpoint() -> tuple[Response, int]:
                 "han": score_data.get("han", 0),
                 "fu": score_data.get("fu", 0),
                 "score_name": score_data.get("score_name", ""),
+                "called_mentsu": [m.tiles for m in called_mentsu_list]
             },
         }
         for key, value in score_data.get("score", {}).items():

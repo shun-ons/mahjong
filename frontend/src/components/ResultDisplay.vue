@@ -1,4 +1,7 @@
 <script setup>
+import { ref } from 'vue';
+import EditHandModal from './EditHandModal.vue';
+
 // App.vueから渡されるデータ（プロパティ）を定義
 defineProps({
     result: {
@@ -6,6 +9,26 @@ defineProps({
         required: true
     }
     });
+const emit = defineEmits(['recalculate'])
+const isEditModalVisible = ref(false);
+
+/**
+ * App.vueに再計算を依頼するためのハンドラ関数.
+ * @param correctedHand - 修正後の手牌.
+ */
+const handleHandUpdate = (correctedHand) => {
+    isEditModalVisible.value = false;
+    emit('recalculate', correctedHand); 
+}
+
+/**
+ * 牌の名前（例: '1m'）を受け取り、対応する画像のパスを返す関数.
+ * @param {string} tileName - 牌の名前.
+ * @returns {string} - Vite/Webpackが解決できる画像パス.
+ */
+const getTileImage = (tileName) => {
+    return new URL(`../assets/images/pai-images/${tileName}.png`, import.meta.url).href;
+};
 </script>
 
 <template>
@@ -30,14 +53,14 @@ defineProps({
         </div>
 
         <div class="details-grid">
-        <div class="detail-item">
-            <span class="label">翻数</span>
-            <span class="value">{{ result.han }} 飜</span>
-        </div>
-        <div class="detail-item">
-            <span class="label">符</span>
-            <span class="value">{{ result.fu }} 符</span>
-        </div>
+            <div class="detail-item">
+                <span class="label">翻数</span>
+                <span class="value">{{ result.han }} 飜</span>
+            </div>
+            <div class="detail-item">
+                <span class="label">符</span>
+                <span class="value">{{ result.fu }} 符</span>
+            </div>
         </div>
 
         <div class="yaku-list">
@@ -51,13 +74,27 @@ defineProps({
 
         <div class="hand-display">
         <h3>和了手牌</h3>
+        <div class="hand-header">
+            <button class="edit-button" @click="isEditModalVisible = true">手牌を修正</button>
+        </div>
         <div class="tiles">
-            <span v-for="(tile, index) in result.hand" :key="index" class="tile">
-            {{ tile }}
-            </span>
+            <img 
+                v-for="(tile, index) in result.hand" 
+                :key="index" 
+                :src="getTileImage(tile)" 
+                :alt="tile" 
+                class="tile-image"
+            />
         </div>
         </div>
     </div>
+
+    <EditHandModal
+        v-if="isEditModalVisible"
+        :initial-hand="result.hand"
+        @close="isEditModalVisible = false"
+        @save="handleHandUpdate"
+    />
 </template>
 
 <style scoped>
@@ -160,5 +197,41 @@ h3 {
     border-radius: 6px;
     font-size: 1.5rem;
     letter-spacing: 4px;
+}
+
+.tile-image {
+    height: 48px;
+    margin: 0 2px;
+    vertical-align: middle;
+}
+
+.hand-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    border-bottom: 2px solid #e8f0e8;
+    padding-bottom: 0.5rem;
+}
+.hand-header h3 {
+    margin: 0;
+    padding: 0;
+    border: none;
+}
+.edit-button {
+    padding: 0.5rem 1rem;
+    background-color: #fff;
+    border: 1px solid #00796b;
+    color: #00796b;
+    border-radius: 6px;
+    cursor: pointer;
+}
+.edit-button:hover {
+    background-color: #e8f0e8;
+}
+.tile-image {
+    height: 48px;
+    margin: 0 2px;
+    vertical-align: middle;
 }
 </style>
