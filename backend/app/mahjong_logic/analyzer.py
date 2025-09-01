@@ -1,4 +1,4 @@
-from .helpers import Tile, Meld
+from .helpers import Tile, Call
 import collections
 
 # 牌の定義
@@ -16,17 +16,17 @@ SANGENPAI = {"5z", "6z", "7z"}
 
 class HandAnalysis:
     """手牌の解析（面子分解、待ちの形特定）を行うクラス"""
-    def __init__(self, hand: list[str], melds: list[Meld], agari_hai: str):
+    def __init__(self, hand: list[str], called_mentsu: list[Call], agari_hai: str):
         """
         手牌の解析を初期化する.
         
         Args:
             hand (list[str])  : 手牌のリスト (例: ["1m", "2m", "3m", "4m", "5m", "6m", "7m"])
-            melds (list[Meld]): 鳴きの情報 (例: [Meld("pon", [1m,2m,3m]), Meld("chi", [4m,5m,6m]) )
+            called_mentsu (list[Call]): 鳴きの情報 (例: [Call("pon", [1m,2m,3m]), Call("chi", [4m,5m,6m]) )
             agari_hai (str)   : アガリ牌の文字列 (例: "5m")
         """
         self.hand = sorted(hand, key=Tile.sort_key)
-        self.melds = melds
+        self.called_mentsu = called_mentsu
         self.agari_hai = agari_hai
         self.agari_combinations = self._analyze()
     
@@ -49,6 +49,16 @@ class HandAnalysis:
         count = hand_counter[tile]
         results = []
         
+        # 槓子として取り出す.
+        if count >= 4:
+            hand_counter[tile] -= 4
+            if not hand_counter[tile]:
+                del hand_counter[tile]
+            sub_results = self._find_combinations(hand_counter.copy())
+            for res in sub_results:
+                results.append([[tile, tile, tile, tile]] + res)
+            hand_counter[tile] += 4
+            
         # 刻子として取り出す.
         if count >= 3:
             hand_counter[tile] -= 3
@@ -88,27 +98,31 @@ class HandAnalysis:
         Returns:
             list[dict]: 解析結果のリスト.各辞書は面子の情報を含む.
         """
+        agari_combination = []
         # 国士無双と七対子のチェック.
         counts = collections.Counter(self.hand)
-        if len(self.melds) == 0:
+        # 同じ牌が5枚以上ある場合は、和了形不成立として空のリストを返す
+        if any(c > 4 for c in counts.values()):
+            return []
+        if len(self.called_mentsu) == 0:
             # 国士無双の判定.
-            if all(t in counts for t in YAOCHUHAI) and len(counts) == 14:
-                return [{"type": "kokushi", "janto": self.agari_hai, "mentsu": []}]
+            if set(counts.keys()) == YAOCHUHAI:
+                return [{"type": "kokushi", "janto": self.agari_hai, "mentsu": [self.hand]}]
             # 七対子の判定.
             if len(counts) == 7 and all(c == 2 for c in counts.values()):
                 machi_type = "tanki" # 七対子は単騎待ち.
-                return [{"type": "chitoi", "janto": None, "mentsu": list(counts.keys()), "machi": machi_type}]
+                agari_combination.append({"type": "chitoi", "janto": None, "mentsu": list(counts.keys()), "machi": machi_type})
         
         # 4面子1雀頭の解析.
         hand_counter = collections.Counter(self.hand)
         open_mentsu = []
-        for m in self.melds:
+        for m in self.called_mentsu:
             open_mentsu.append(m.tiles)
             for tile in m.tiles:
                 hand_counter[tile] -= 1
         # Counterから枚数が1以上の牌だけをリストに戻す
         closed_hand = list(hand_counter.elements())
-        results = []
+        results_normal = []
         
         # 雀頭の候補を探す.
         closed_hand_counter = collections.Counter(closed_hand)
@@ -135,13 +149,14 @@ class HandAnalysis:
                     if not agari_mentsu and not is_agari_in_janto:
                         continue
                     machi = self._get_machi_type(agari_mentsu[0] if agari_mentsu else [], normal_janto_candidate, is_agari_in_janto)                    
-                    results.append({
+                    results_normal.append({
                         "type": "normal",
                         "janto": normal_janto_candidate,
                         "mentsu": combo + open_mentsu,
                         "machi": machi
                     })
-        return results
+        agari_combination.extend(results_normal)
+        return agari_combination
 
     def _get_machi_type(self, mentsu: list[str], janto: list[str], is_agari_in_janto: bool) -> str:
         """
@@ -173,3 +188,4 @@ class HandAnalysis:
             return "ryanmen"
         else: # 刻子
             return "shanpon"
+        
