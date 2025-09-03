@@ -12,12 +12,14 @@ from typing import Dict, List, Tuple
 import cv2
 import numpy as np
 from ultralytics import YOLO
+from glob import glob
 
 # --- 定数定義 ---
-MODEL_PATH: str = "runs/detect/mahjong_train/weights/best.pt"
+MODEL_PATH: str = "/home/hamuro/Search/mahjong/runs/detect/mahjong_train/weights/best.pt"
 CONFIDENCE_THRESHOLD: float = 0.5
+MODE=1#1なら単一画像、2ならフォルダ内の画像に対して検出
 # ↓↓↓ 処理したい単一の画像ファイルのパスを指定してください ↓↓↓
-TARGET_IMAGE_PATH: str = "Mahjang.v1i.yolov8/test/LINE_ALBUM_麻雀2_250816_1.jpg"
+TARGET_IMAGE_PATH: str = "/home/hamuro/Search/mahjong/Mahjang.v2i.yolov8/test/images/test_250825_3_jpg.rf.0e86e7efdd4d8c3c3a27301939a00b84.jpg"
 OUTPUT_FOLDER: str = "output"
 
 # モデルのクラス名を指定形式の文字列に変換するための対応表
@@ -99,15 +101,21 @@ def detect_tiles_with_segmentation(
     return detected_tiles, annotated_frame
 
 
-def process_single_image(model: YOLO, image_path: str) -> list[dict]:
+def process_single_image(
+    model: YOLO,
+    image_path: str,
+    return_with_conf: bool = False
+) -> list:
     """指定された単一の画像に対し、牌検出とセグメンテーションを実行します。
 
     Args:
         model (YOLO): 読み込み済みのYOLOモデル。
         image_path (str): 処理対象の画像ファイルパス。
+        return_with_conf (bool): Trueなら (牌, 信頼度) のリストを返す。
+                                 Falseなら 牌だけのリストを返す。
 
     Returns:
-        list[dict]: 画像の解析結果 (agari_combinations) のリスト。
+        list: 検出された牌のリスト（文字列 or (文字列, 信頼度) のタプル）。
     """
     image_filename = os.path.basename(image_path)
     try:
@@ -121,11 +129,13 @@ def process_single_image(model: YOLO, image_path: str) -> list[dict]:
         for tile, conf in detected_tiles:
             print(f"  {tile}: {conf:.3f}")
 
+        # hand（牌だけのリスト）
         hand = [tile for tile, conf in detected_tiles]
+
+        # 解析は残す（必要なら利用可能）
         agari_hai = hand[-1] if hand else ""
         melds = []
-        
-        hand_analyzer = HandAnalysis(hand=hand, melds=melds, agari_hai=agari_hai)
+        _ = HandAnalysis(hand=hand, melds=melds, agari_hai=agari_hai)
 
         # 結果画像保存
         base_name = os.path.splitext(image_filename)[0]
@@ -133,7 +143,8 @@ def process_single_image(model: YOLO, image_path: str) -> list[dict]:
         cv2.imwrite(save_path, annotated_img)
         print(f"\n-> セグメンテーション結果画像を保存しました: {save_path}")
 
-        return hand_analyzer.agari_combinations
+        # 戻り値（リストのみ）
+        return detected_tiles if return_with_conf else hand
 
     except FileNotFoundError:
         print(f"エラー: ファイルが見つかりません: {image_path}")
@@ -145,26 +156,64 @@ def process_single_image(model: YOLO, image_path: str) -> list[dict]:
         print(f"-> 予期せぬエラーが発生しました: {e}")
         return []
 
+def process_folder(
+    model: YOLO,
+    folder_path: str,
+    return_with_conf: bool = False
+) -> dict:
+    """指定フォルダ内の全画像を処理し、結果をまとめて返す。
+
+    Args:
+        model (YOLO): 読み込み済みのYOLOモデル。
+        folder_path (str): 処理対象のフォルダパス。
+        return_with_conf (bool): Trueなら (牌, 信頼度) のリストを返す。
+                                 Falseなら 牌だけのリストを返す。
+
+    Returns:
+        dict: {画像ファイル名: 検出された牌リスト}
+    """
+    image_extensions = ("*.jpg", "*.jpeg", "*.png", "*.bmp")
+    image_files = []
+    for ext in image_extensions:
+        image_files.extend(glob(os.path.join(folder_path, ext)))
+
+    if not image_files:
+        print(f"指定フォルダに画像が見つかりません: {folder_path}")
+        return {}
+
+    results = {}
+    for img_path in sorted(image_files):
+        print("\n" + "=" * 60)
+        print(f"処理中: {os.path.basename(img_path)}")
+        print("=" * 60)
+
+        tiles = process_single_image(model, img_path, return_with_conf=return_with_conf)
+        results[os.path.basename(img_path)] = tiles
+
+    return results
+
 
 if __name__ == "__main__":
-    # 出力フォルダが存在しない場合は作成
+    mode=MODE
     if not os.path.exists(OUTPUT_FOLDER):
         os.makedirs(OUTPUT_FOLDER)
 
-    # YOLOモデルを読み込み
     print("YOLOモデルを読み込んでいます...")
     yolo_model = YOLO(MODEL_PATH)
     print("モデルの読み込み完了。")
 
-    # 単一の画像を処理
-    final_combinations = process_single_image(yolo_model, TARGET_IMAGE_PATH)
+    # 単一画像の場合
+    if mode==1:
+        hand_only = process_single_image(yolo_model, TARGET_IMAGE_PATH, return_with_conf=False)
+        print("\n=== 単一画像の検出結果 ===")
+        pprint(hand_only, indent=2)
 
-    # 最終的な解析結果をまとめて出力
-    print("\n" + "="*50)
-    print(f"<<< 最終解析結果: {os.path.basename(TARGET_IMAGE_PATH)} >>>")
-    print("="*50)
+    # フォルダ内すべての画像を処理
+    if mode==2:
+        target_folder = "/home/hamuro/Search/mahjong/Mahjang.v2i.yolov8/test/images"
+        all_results = process_folder(yolo_model, target_folder, return_with_conf=False)
 
-    if final_combinations:
-        pprint(final_combinations, indent=2)
-    else:
-        print("有効な和了形は検出されませんでした。")
+    print("\n" + "=" * 60)
+    print(f"<<< フォルダ内の全検出結果: {target_folder} >>>")
+    print("=" * 60)
+    pprint(all_results, indent=2)
