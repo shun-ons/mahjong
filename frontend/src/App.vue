@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed } from 'vue';
 import ResultDisplay from './components/ResultDisplay.vue';
+import HandDisplay from './components/HandDisplay.vue'; // ★ HandDisplay をインポート
 
 // 送信データを定義.
 const formData = ref({
@@ -9,7 +10,6 @@ const formData = ref({
   is_oya: false,
   dora_indicators: '',
   ura_dora_indicators: '',
-  aka_dora_indicators: '',
   agari_hai: '',
   bakaze: '1z',
   jikaze: '1z',
@@ -27,34 +27,26 @@ const formData = ref({
 });
 
 // 状態管理用の変数を定義.
-const calculationResult = ref(null); // 計算結果を保持
+const calculationResult = ref(null); // 点数計算結果を保持
+const recognizedHand = ref(null);      // ★ 認識された手牌を保持
 const isLoading = ref(false);        // 通信中かどうか
 const errorState = ref(null);        // エラーメッセージ
 
-
+// (モーダル関連のコードは変更なし)
 const isModalVisible = ref(false); 
-// ポップアップの表示状態を管理する変数.
-const openModal = () => {
-  isModalVisible.value = true;
-};
-const closeModal = () => {
-  isModalVisible.value = false;
-};
+const openModal = () => { isModalVisible.value = true; };
+const closeModal = () => { isModalVisible.value = false; };
 
-// ファイル選択時の処理
+// (ファイル選択、面前、鳴き情報のコードも変更なし)
 const handleFileChange = (event) => {
   const file = event.target.files[0];
   if (file) {
-    formData.value.image = file; // 選択されたファイルをformDataに設定.
+    formData.value.image = file;
   }
 };
-
-// 面前かどうかの管理.
 const isMenzen = computed(() => {
   return formData.value.called_mentsu_list.length === 0;
 });
-
-// 鳴き情報の追加・削除.
 const addMeld = () => {
   formData.value.called_mentsu_list.push({type: 'pon', tiles: ''});
 };
@@ -62,51 +54,67 @@ const removeMeld = (index) => {
   formData.value.called_mentsu_list.splice(index, 1);
 };
 
+
 // データ送信用の関数
 const sendData = () => {
   // 状態をリセット.
   isLoading.value = true;
   errorState.value = null;
+  calculationResult.value = null; // ★ 点数結果をクリア
+  recognizedHand.value = null;    // ★ 手牌もクリア
 
-  // 送信用データの作成.
+  // (submissionData の作成は変更なし)
   const submissionData = new FormData();
-  // 画像ファイルを追加.
   if (formData.value.image) {
     submissionData.append('image', formData.value.image);
   }
-  // 画像ファイル以外をgame_infoオブジェクトとする.
   const gameInfo = {};
   for (const key in formData.value) {
     if (key !== 'image') {
       gameInfo[key] = formData.value[key];
     }
   }
-  // 面前情報を追加.
   gameInfo.is_menzen = isMenzen.value;
-
-  // game_infoオブジェクトをsubmissionDataに追加.
   submissionData.append('game_info', JSON.stringify(gameInfo));
 
-  // サーバにデータを送信する.
   fetch('/api/calculate', {
     method: 'POST',
     body: submissionData,
   })
   .then(result => {
+    // ★ エラーレスポンスからもJSONをパース試行
     if (!result.ok) {
-      return result.json().then(err => { throw new Error(err.message || 'サーバーエラーが発生しました') });
+        // エラーJSONをパースして、元のErrorオブジェクトにdataプロパティとして追加
+        return result.json().then(errData => {
+            const error = new Error(errData.message || 'サーバーエラーが発生しました');
+            error.data = errData; // ★ エラーデータ（手牌が含まれる可能性）を添付
+            throw error;
+        });
     }
     return result.json();
   })
   .then(result => {
     if (result.status === 'success') {
-      calculationResult.value = result.data;
+      calculationResult.value = result.data; // ★ 点数結果をセット
+      recognizedHand.value = result.data.hand;  // ★ 認識された手牌をセット
+      errorState.value = null; // エラーをクリア
     } else {
-      throw new Error(result.message || 'サーバーエラーが発生しました');
+      // APIがステータス200でエラーを返した場合
+      const error = new Error(result.message || 'サーバーエラーが発生しました');
+      error.data = result.data; // ★ 手牌データが含まれている可能性
+      throw error;
     }
   })
   .catch(error => {
     errorState.value = error.message;
+    calculationResult.value = null; // 失敗したら点数結果はクリア
+    
+    // ★ バックエンドがエラー時も手牌を返してくれていれば、ここでセット
+    if (error.data && error.data.hand) {
+      recognizedHand.value = error.data.hand;
+    } else {
+      recognizedHand.value = null; // 手牌がなければクリア
+    }
     console.error('There was a problem with the fetch operation:', error);
   })
   .finally(() => {
@@ -117,9 +125,10 @@ const sendData = () => {
 const recalculateScore = (correctedHand) => {
   isLoading.value = true;
   errorState.value = null;
-  calculationResult.value = null;
+  calculationResult.value = null; // ★ 点数結果を一旦クリア
+  recognizedHand.value = correctedHand; // ★ 修正後の手牌は表示し続ける
 
-  // 画像以外のゲーム情報を再度まとめる.
+  // (game_info の作成は変更なし)
   const game_info = {};
   for (const key in formData.value) {
     if (key !== 'image') {
@@ -127,7 +136,7 @@ const recalculateScore = (correctedHand) => {
     }
   }
   game_info.is_menzen = formData.value.called_mentsu_list.length === 0;
-  game_info.hand = correctedHand;
+  game_info.hand = correctedHand; // ★ 修正後の手牌を使う
 
   fetch('/api/calculate', {
     method: 'POST',
@@ -138,19 +147,35 @@ const recalculateScore = (correctedHand) => {
   })
   .then(result => {
     if (!result.ok) {
-      return result.json().then(err => { throw new Error(err.message || 'サーバーエラーが発生しました') });
+      return result.json().then(err => { 
+        const error = new Error(err.message || 'サーバーエラーが発生しました');
+        error.data = err; // エラーレスポンスを添付
+        throw error;
+      });
     }
     return result.json();
   })
   .then(result => {
     if (result.status === 'success') {
       calculationResult.value = result.data;
+      recognizedHand.value = result.data.hand; // 念のため手牌も更新
+      errorState.value = null;
     } else {
-      throw new Error(result.message || 'サーバーエラーが発生しました');
+      const error = new Error(result.message || 'サーバーエラーが発生しました');
+      error.data = result.data;
+      throw error;
     }
   })
   .catch(error => {
     errorState.value = error.message;
+    calculationResult.value = null; // 点数計算は失敗
+    // ★ でも recognizedHand.value はクリアしない！
+    
+    // ★ もしバックエンドがエラー時に手牌を返してくれたら更新
+    if (error.data && error.data.hand) {
+      recognizedHand.value = error.data.hand;
+    }
+    
     console.error('There was a problem with the fetch operation:', error);
   })
   .finally(() => {
@@ -160,14 +185,16 @@ const recalculateScore = (correctedHand) => {
 </script>
 
 <template>
-  <div class="container"> <header>
+  <div class="container">
+    <header>
       <h1>麻雀得点計算サイト</h1>
       <p>このサイトでは、麻雀の得点計算を行うことができます。<br>以下のフォームに手牌の画像と情報を入力してください</p>
     </header>
 
     <main>
+      <!-- フォーム部分は変更なし -->
       <form @submit.prevent="sendData" method="post" class="score-form">
-        
+        <!-- (fieldset ... ) -->
         <fieldset>
           <legend>基本情報</legend>
           <div class="form-group">
@@ -200,10 +227,6 @@ const recalculateScore = (correctedHand) => {
           <div class="form-group">
             <label for="ura_dora_indicators">裏ドラ:</label>
             <input type="text" id="ura_dora_indicators" name="ura_dora_indicators" placeholder="例: 3s, 6z" v-model="formData.ura_dora_indicators">
-          </div>
-          <div class="form-group">
-            <label for="aka_dora_indicators">赤ドラ:</label>
-            <input type="text" id="aka_dora_indicators" name="aka_dora_indicators" placeholder="例: 5m, 2p" v-model="formData.aka_dora_indicators">
           </div>
           <button type="button" @click="openModal" class="help-btn"> ？</button>
           <span>書き方</span>
@@ -307,14 +330,28 @@ const recalculateScore = (correctedHand) => {
       <div v-if="isLoading" class="loading-spinner">
         計算中...
       </div>
+      
+      <!-- ★★★ ここからが変更箇所 ★★★ -->
+      
+      <!-- エラーメッセージ -->
       <div v-if="errorState" class="error-message">
         <strong>エラー:</strong> {{ errorState }}
       </div>
+
+      <!-- 点数計算結果 (エラーがなく、結果がある場合のみ表示) -->
       <ResultDisplay
-        v-if="calculationResult"
+        v-if="calculationResult && !errorState"
         :result="calculationResult"
+      />
+
+      <!-- 手牌表示 (手牌データが存在する場合に常に表示) -->
+      <HandDisplay
+        v-if="recognizedHand"
+        :hand="recognizedHand"
         @recalculate="recalculateScore"
       />
+      <!-- ★★★ 変更点ここまで ★★★ -->
+      
     </main>
 
     <footer>
@@ -324,8 +361,9 @@ const recalculateScore = (correctedHand) => {
       </p>
     </footer>
 
-    <!-- 麻雀牌の記述例を表示するモーダルウィンドウ -->
+    <!-- モーダルウィンドウ (変更なし) -->
     <div v-if="isModalVisible" class="modal-overlay" @click="closeModal">
+      <!-- ( ... modal-content ... ) -->
       <div class="modal-content" @click.stop>
         <button class="close-btn" @click="closeModal">&times;</button>
         <h3>ドラ入力対応表</h3>
@@ -392,46 +430,39 @@ const recalculateScore = (correctedHand) => {
 </template>
 
 <style scoped>
-/* 全体のコンテナ */
+/* App.vueのスタイルは変更なし */
+/* ... (既存のスタイル) ... */
 .container {
   max-width: 800px;
   margin: 2rem auto;
   padding: 2rem;
-  background-color: #f7f9f7; /* 背景はごく薄い緑がかった色に */
+  background-color: #f7f9f7;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  color: #2c3e50; /* 基本の文字色 */
+  color: #2c3e50;
 }
-
-/* ヘッダー部分 */
 header {
   text-align: center;
   margin-bottom: 2rem;
   border-bottom: 1px solid #dce5dc;
   padding-bottom: 1.5rem;
 }
-
 header h1 {
   font-size: 2.5rem;
-  color: #004d40; /* 深緑 */
+  color: #004d40;
   margin: 0;
 }
-
 header p {
   font-size: 1.1rem;
-  color: #556b55; /* やや落ち着いた緑系の文字色 */
+  color: #556b55;
   margin-top: 0.5rem;
 }
-
-/* フォーム全体 */
 .score-form {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
 }
-
-/* フォームの各セクション */
 fieldset {
   border: 1px solid #dce5dc;
   border-radius: 8px;
@@ -439,34 +470,29 @@ fieldset {
   background-color: #ffffff;
   box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
-
 legend {
   font-size: 1.3rem;
   font-weight: 600;
   padding: 0 0.75rem;
-  color: #004d40; /* 深緑 */
+  color: #004d40;
+  display: flex;
+  align-items: center;
 }
-
-/* 各入力項目（ラベルと入力欄のペア） */
 .form-group {
   display: grid;
-  grid-template-columns: 150px 1fr; /* ラベルと入力欄の幅を固定 */
+  grid-template-columns: 150px 1fr;
   align-items: center;
   gap: 1rem;
   margin-bottom: 1rem;
 }
-
 .form-group:last-child {
   margin-bottom: 0;
 }
-
 .form-group label {
   font-weight: 500;
   text-align: right;
   padding-right: 1rem;
 }
-
-/* テキスト入力、数値入力、ファイル選択、セレクトボックス */
 .form-group input[type="text"],
 .form-group input[type="number"],
 .form-group input[type="file"],
@@ -478,22 +504,18 @@ legend {
   font-size: 1rem;
   transition: border-color 0.3s, box-shadow 0.3s;
 }
-
 .form-group input:focus,
 .form-group select:focus {
   outline: none;
-  border-color: #00796b; /* フォーカス時の色 */
+  border-color: #00796b;
   box-shadow: 0 0 0 3px rgba(0, 121, 107, 0.2);
 }
-
-/* チェックボックスのレイアウト */
 .checkbox-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   gap: 1rem;
-  padding-left: 160px; /* 他の入力欄と左端を合わせる */
+  padding-left: 160px;
 }
-
 .checkbox-item {
   display: flex;
   align-items: center;
@@ -506,10 +528,8 @@ legend {
 .checkbox-item input[type="checkbox"] {
   width: 1.2em;
   height: 1.2em;
-  accent-color: #004d40; /* チェックボックスの色を深緑に */
+  accent-color: #004d40;
 }
-
-/* 送信ボタン */
 .submit-btn {
   display: block;
   width: 100%;
@@ -517,20 +537,23 @@ legend {
   font-size: 1.2rem;
   font-weight: 600;
   color: #fff;
-  background: linear-gradient(45deg, #004d40, #00796b); /* グラデーション */
+  background: linear-gradient(45deg, #004d40, #00796b);
   border: none;
   border-radius: 8px;
   cursor: pointer;
   transition: transform 0.2s, box-shadow 0.2s;
   margin-top: 1rem;
 }
-
-.submit-btn:hover {
+.submit-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+.submit-btn:not(:disabled):hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 10px rgba(0, 77, 64, 0.3);
 }
-
-/* ヘルプボタン (?) */
 .help-btn {
   display: inline-flex;
   justify-content: center;
@@ -550,25 +573,18 @@ legend {
   background-color: #004d40;
   color: #fff;
 }
-legend {
-  display: flex; /* ボタンを横に並べるため */
-  align-items: center;
-}
-
-/* ポップアップ（モーダル） */
 .modal-overlay {
-  position: fixed; /* 画面全体を覆う */
+  position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.6); /* 半透明の黒い背景 */
+  background-color: rgba(0, 0, 0, 0.6);
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000; /* 他の要素より手前に表示 */
+  z-index: 1000;
 }
-
 .modal-content {
   background-color: #fff;
   padding: 2rem;
@@ -578,7 +594,6 @@ legend {
   max-width: 500px;
   position: relative;
 }
-
 .close-btn {
   position: absolute;
   top: 10px;
@@ -592,44 +607,35 @@ legend {
 .close-btn:hover {
   color: #333;
 }
-
 .modal-content h3 {
   margin-top: 0;
   color: #004d40;
 }
-
-/* 対応表のスタイル */
 .tile-table {
   width: 100%;
   border-collapse: collapse;
   margin-top: 1rem;
 }
-
 .tile-table th, .tile-table td {
   border: 1px solid #ddd;
   padding: 0.75rem;
   text-align: left;
 }
-
 .tile-table th {
   background-color: #f7f9f7;
 }
-
 .tile-table code {
   background-color: #e8f0e8;
   padding: 2px 6px;
   border-radius: 4px;
   font-family: monospace;
 }
-
-/* 鳴き情報の各行 */
 .meld-group {
   display: flex;
   align-items: center;
   gap: 0.75rem;
   margin-bottom: 1rem;
 }
-
 .meld-type {
   flex: 1;
   padding: 0.75rem;
@@ -637,7 +643,6 @@ legend {
   border-radius: 6px;
   font-size: 1rem;
 }
-
 .meld-tiles {
   flex: 2;
   padding: 0.75rem;
@@ -645,7 +650,6 @@ legend {
   border-radius: 6px;
   font-size: 1rem;
 }
-
 .add-btn, .remove-btn {
   padding: 0.5rem 0.75rem;
   border: 1px solid #ccc;
@@ -654,7 +658,6 @@ legend {
   cursor: pointer;
   font-weight: bold;
 }
-
 .add-btn {
   border-color: #00796b;
   color: #00796b;
@@ -663,21 +666,17 @@ legend {
   margin-bottom: 0.5rem;
   padding: 0.75rem;
 }
-
 .remove-btn {
   border-color: #d32f2f;
   color: #d32f2f;
 }
-
 .add-btn:hover {
   background-color: #e8f0e8;
 }
-
 .remove-btn:hover {
   background-color: #fbe9e7;
 }
-
-.site-footer {
+footer {
   text-align: center;
   margin-top: 3rem;
   padding-top: 1.5rem;
@@ -685,14 +684,27 @@ legend {
   font-size: 0.9rem;
   color: #556b55;
 }
-
-.site-footer a {
+footer a {
   color: #00796b;
   text-decoration: none;
 }
-
-.site-footer a:hover {
+footer a:hover {
   text-decoration: underline;
 }
+/* ★★★ このスタイルを追加 ★★★ */
+.loading-spinner {
+  text-align: center;
+  padding: 2rem;
+  font-size: 1.2rem;
+  color: #004d40;
+}
+.error-message {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background-color: #fbe9e7;
+  border: 1px solid #d32f2f;
+  color: #d32f2f;
+  border-radius: 8px;
+  text-align: center;
+}
 </style>
-

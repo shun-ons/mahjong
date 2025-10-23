@@ -2,7 +2,10 @@ mahjong_env
 # Pythonのコンパイル済みキャッシュ
 __pycache__/
 /Mahjang.v2i.yolov8/
+/runs/
 runs/detect/mahjong_train/*.png
 runs/detect/mahjong_train/*.jpg
 runs/detect/mahjong_train/*.csv
 /output/
+/recognition_outputs/
+*.zip
