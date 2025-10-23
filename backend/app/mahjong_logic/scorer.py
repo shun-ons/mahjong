@@ -53,16 +53,16 @@ class MahjongScorer:
         # 1. 手牌を解析し、考えられる全ての和了パターンを取得
         analysis_patterns = HandAnalysis(
             self.hand, self.called_mentsu, self.game_state.get("agari_hai", "")
-        ).agari_combinations
-        
-        if not analysis_patterns:
+        )
+        print(analysis_patterns.hand)  # デバッグ用
+        if not analysis_patterns.agari_combinations:
             return {"error": "和了形ではありません。"}
 
         # 2. 各パターンで点数を計算し、最も高いものを選ぶ（高点法）
         best_result = None
         highest_score = -1
 
-        for pattern in analysis_patterns:
+        for pattern in analysis_patterns.agari_combinations:
             # 2a. 役を判定
             yaku_judge = YakuJudge(pattern, self.called_mentsu, self.game_state)
             found_yaku = yaku_judge.check_all_yaku()
@@ -136,7 +136,7 @@ class MahjongScorer:
         if han == 0:
             return {"total": 0, "oya": 0, "ko": 0}, ""
         if han >= 13:
-            score_name, base_p = "数え役満", 8000
+            score_name, base_p = "役満", 8000
         elif han >= 11:
             score_name, base_p = "三倍満", 6000
         elif han >= 8:

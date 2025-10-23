@@ -14,7 +14,7 @@ from flask import Blueprint, jsonify, request
 from flask.wrappers import Response
 # 依存モジュールのインポート
 # mahjong_logicsパッケージから各モジュールをインポート
-from .mahjong_logic.helpers import Call
+from .mahjong_logic.helpers import Call, Tile
 from .mahjong_logic.scorer import MahjongScorer
 # servicesパッケージからモジュールをインポート
 from .services.recognition_service import (NoTilesDetectedError, detect_tiles)
@@ -40,7 +40,6 @@ def calculate_score_endpoint() -> tuple[Response, int]:
     Returns:
         FlaskのResponseオブジェクトとHTTPステータスコードのタプル。
     """
-    print('ok!!')
     try:
         if request.is_json:
             json_data = request.get_json()
@@ -53,6 +52,7 @@ def calculate_score_endpoint() -> tuple[Response, int]:
                 return jsonify({"status": "error", "message": err_msg}), 400
             hand_list = game_info['hand']
         else:
+            print("step1 ok")
             # 3. 入力値検証
             if 'image' not in request.files:
                 err_msg = "「画像ファイル」がリクエストに含まれていません。"
@@ -61,6 +61,8 @@ def calculate_score_endpoint() -> tuple[Response, int]:
             if 'game_info' not in request.form:
                 err_msg = "「対局情報」がリクエストに含まれていません。"
                 return jsonify({"status": "error", "message": err_msg}), 400
+            
+            print('step2 ok')
 
             image_file = request.files['image']
             game_info_str = request.form['game_info']
@@ -77,11 +79,12 @@ def calculate_score_endpoint() -> tuple[Response, int]:
 
             # 4. 牌検出
             try:
-                # image_data = image_file.read()
-                # hand_list = detect_tiles(image_data)
+                image_data = image_file.read()
+                hand_list = detect_tiles(image_data)
+                print(hand_list)
                 
                 # テスト用の仮リスト.
-                hand_list = ["1m","2m","3m","2p","3p","4p","5s","6s","7s","1z","1z","1z", "5z", "5z"]
+                # hand_list = ["1m","2m","3m","2p","3p","4p","5s","6s","7s","1z","1z","1z", "5z", "5z"]
             except NoTilesDetectedError as e:
                 # 牌が検出できなかった場合
                 return jsonify({"status": "error", "message": str(e)}), 400
@@ -102,7 +105,7 @@ def calculate_score_endpoint() -> tuple[Response, int]:
         score_data = scorer.calculate()
 
         if 'error' in score_data:
-            return jsonify({"status": "error", "message": score_data['error']}), 400
+            return jsonify({"status": "error", "message": score_data['error'], "hand": sorted(hand_list, key=Tile.sort_key)}), 400
 
         # 6. 応答生成
         # final_score = score_data.get("score", {}).get("total", 0)
@@ -113,7 +116,7 @@ def calculate_score_endpoint() -> tuple[Response, int]:
         response_data = {
             "status": "success",
             "data": {
-                "hand": hand_list,
+                "hand": sorted(hand_list, key=Tile.sort_key),
                 "yaku": yaku_list,
                 "han": score_data.get("han", 0),
                 "fu": score_data.get("fu", 0),

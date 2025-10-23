@@ -5,7 +5,7 @@ from ultralytics import YOLO
 base_model = 'yolov8m.pt'
 
 # データセットのyamlファイルパス（クラス数・画像パスなどを定義したもの）
-data_yaml = 'Mahjang.v2i.yolov8/data.yaml'  # あなたのyamlファイル名に置き換えてください
+data_yaml = 'ml/data/data.yaml'  # あなたのyamlファイル名に置き換えてください
 
 # 学習用YOLOモデルを読み込み
 model = YOLO(base_model)
@@ -16,6 +16,6 @@ model.train(
     epochs=100,               # 学習エポック数
     batch=16,                # バッチサイズ
     imgsz=640,               # 画像サイズ（推奨640）
-    name='mahjong_train',    # 保存フォルダ名（runs/train/mahjong_train）
+    name='mahjong_train_v3',    # 保存フォルダ名（runs/train/mahjong_train）
     device=0                 # GPU番号（CPUのみなら'cpu'）
 )

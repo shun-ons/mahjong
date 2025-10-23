@@ -99,22 +99,23 @@ class HandAnalysis:
             list[dict]: 解析結果のリスト.各辞書は面子の情報を含む.
         """
         agari_combination = []
+        normalization_hand = [Tile.to_normal(t) for t in self.hand]
         # 国士無双と七対子のチェック.
-        counts = collections.Counter(self.hand)
+        counts = collections.Counter(normalization_hand)
         # 同じ牌が5枚以上ある場合は、和了形不成立として空のリストを返す
         if any(c > 4 for c in counts.values()):
             return []
-        if len(self.called_mentsu) == 0:
+        if len(self.called_mentsu) == 0 and len(self.hand) == 14:
             # 国士無双の判定.
             if set(counts.keys()) == YAOCHUHAI:
                 return [{"type": "kokushi", "janto": self.agari_hai, "mentsu": [self.hand]}]
             # 七対子の判定.
             if len(counts) == 7 and all(c == 2 for c in counts.values()):
                 machi_type = "tanki" # 七対子は単騎待ち.
-                agari_combination.append({"type": "chitoi", "janto": None, "mentsu": list(counts.keys()), "machi": machi_type})
+                agari_combination.append({"type": "chitoi", "janto": None, "mentsu": self.hand, "machi": machi_type})
         
         # 4面子1雀頭の解析.
-        hand_counter = collections.Counter(self.hand)
+        hand_counter = collections.Counter(normalization_hand)
         open_mentsu = []
         for m in self.called_mentsu:
             open_mentsu.append(m.tiles)
@@ -148,6 +149,10 @@ class HandAnalysis:
                     # アガリ牌が面子に含まれていない場合は雀頭待ちかどうかを確認.
                     if not agari_mentsu and not is_agari_in_janto:
                         continue
+                    for i in range(len(combo)):
+                        for j in range(len(combo[i])):
+                            if not combo[i][j] in self.hand:
+                                combo[i][j] = combo[i][j] + 'r'  # 赤ドラの牌を元に戻す.
                     machi = self._get_machi_type(agari_mentsu[0] if agari_mentsu else [], normal_janto_candidate, is_agari_in_janto)                    
                     results_normal.append({
                         "type": "normal",
