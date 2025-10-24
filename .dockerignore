@@ -1,0 +1,14 @@
+# Pythonのキャッシュファイル.
+**/__pycache__/
+*.pyc
+
+# テストコード.
+backend/test/
+backend/test_*.py
+
+# フロントエンドのビルド成果物.
+frontend/modules/
+
+# その他.
+.venv
+.git
