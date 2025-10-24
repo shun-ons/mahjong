@@ -26,7 +26,7 @@ echo "Building backend image ($BACKEND_IMAGE)..."
 docker build -t $BACKEND_IMAGE -f Dockerfile .
 
 echo "Building frontend image ($FRONTEND_IMAGE)..."
-docker build -t $FRONTEND_IMAGE -f Dockerfile.frontend .
+docker build -t $FRONTEND_IMAGE -f frontend/Dockerfile.frontend .
 
 # --- 3. Dockerコンテナの実行 ---
 echo "Starting backend container ($BACKEND_NAME)..."
