@@ -1,30 +1,54 @@
-# Logs
-logs
+# Git関連
+.git
+.gitignore
+
+# OS固有のファイル
+.DS_Store
+Thumbs.db
+
+# IDE / エディタ設定
+.vscode/
+.idea/
+
+# Docker自体
+Dockerfile
+Dockerfile.frontend
+.dockerignore
+docker-compose.yml
+
+# ドキュメントやREADME
+docs/
+*.md
+
+# ログファイル
 *.log
+
+# -----------------
+# Python / backend
+# -----------------
+
+# 仮想環境
+.venv/
+venv/
+
+# Pythonキャッシュ
+**/__pycache__/
+*.pyc
+
+# backendのテストコード
+backend/test/
+
+# -----------------
+# Node.js / frontend
+# -----------------
+
+# 依存関係（これが一番重いので最重要）
+**/node_modules
+
+# ローカルでのビルド成果物
+frontend/dist/
+
+# デバッグログ
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
-
-node_modules
-.DS_Store
-dist
-dist-ssr
-coverage
-*.local
-
-/cypress/videos/
-/cypress/screenshots/
-
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
-
-*.tsbuildinfo

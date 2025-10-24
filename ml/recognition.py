@@ -227,20 +227,20 @@ def analyze_hand_from_image(image_data: bytes, model_path: str) -> List[str]:
 
     detected_tiles: List[str] = []
     
-    # 4. デバッグ用に結果画像
-    # YOLOの結果からバウンディングボックス付きの画像(NumPy配列)を取得
-    annotated_frame = results[0].plot()
+    # # 4. デバッグ用に結果画像
+    # # YOLOの結果からバウンディングボックス付きの画像(NumPy配列)を取得
+    # annotated_frame = results[0].plot()
 
-    # 保存先ディレクトリをプロジェクトルート直下に設定
-    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-    output_dir = os.path.join(project_root, 'recognition_outputs')
-    os.makedirs(output_dir, exist_ok=True)
+    # # 保存先ディレクトリをプロジェクトルート直下に設定
+    # project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+    # output_dir = os.path.join(project_root, 'recognition_outputs')
+    # os.makedirs(output_dir, exist_ok=True)
 
-    # ユニークなファイル名を生成して保存
-    unique_filename = f"{uuid.uuid4().hex}.jpg"
-    save_path = os.path.join(output_dir, unique_filename)
-    cv2.imwrite(save_path, annotated_frame)
-    print(f"デバッグ用の認識結果画像を保存しました: {save_path}")
+    # # ユニークなファイル名を生成して保存
+    # unique_filename = f"{uuid.uuid4().hex}.jpg"
+    # save_path = os.path.join(output_dir, unique_filename)
+    # cv2.imwrite(save_path, annotated_frame)
+    # print(f"デバッグ用の認識結果画像を保存しました: {save_path}")
 
     # 4. 検出結果を処理する
     # results[0]に最初の画像の結果が含まれている
