@@ -10,12 +10,6 @@ Thumbs.db
 .vscode/
 .idea/
 
-# Docker自体
-Dockerfile
-Dockerfile.frontend
-.dockerignore
-docker-compose.yml
-
 # ドキュメントやREADME
 docs/
 *.md

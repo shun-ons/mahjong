@@ -1,0 +1,24 @@
+# --- ステージ1: ビルド環境 ---
+# ベースイメージとしてNode.jsを使用.
+FROM node:22 AS builder
+
+# 作業ディレクトリの設定.
+WORKDIR /app
+# 依存関係ファイルのコピー.
+COPY frontend/package.json frontend/package-lock.json ./
+# 依存関係のインストール.
+RUN npm install
+# アプリケーションコードのコピー.
+COPY frontend/ .
+# アプリケーションのビルド.
+RUN npm run build
+
+# --- ステージ2: 実行環境 ---
+# ベースイメージとしてNginxを使用.
+FROM nginx:1.25-alpine
+# ビルド成果物をNginxのデフォルトの公開ディレクトリにコピー.
+COPY --from=builder /app/dist /usr/share/nginx/html
+# 80番ポートを公開.
+EXPOSE 80
+# Nginxの起動コマンド.
+CMD ["nginx", "-g", "daemon off;"]
