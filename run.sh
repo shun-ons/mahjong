@@ -13,22 +13,7 @@ FRONTEND_IMAGE="mahjong-frontend"
 FRONTEND_NAME="frontend_container"
 FRONTEND_PORT=8080
 
-# --- 1. 古いコンテナの停止と削除 ---
-# 以前のコンテナが残っているとポートが競合するため、先に停止・削除します
-echo "Stopping and removing old containers..."
-docker stop $BACKEND_NAME || true
-docker rm $BACKEND_NAME || true
-docker stop $FRONTEND_NAME || true
-docker rm $FRONTEND_NAME || true
-
-# --- 2. Dockerイメージのビルド ---
-echo "Building backend image ($BACKEND_IMAGE)..."
-docker build -t $BACKEND_IMAGE -f Dockerfile .
-
-echo "Building frontend image ($FRONTEND_IMAGE)..."
-docker build -t $FRONTEND_IMAGE -f frontend/Dockerfile.frontend .
-
-# --- 3. Dockerコンテナの実行 ---
+# --- Dockerコンテナの実行 ---
 echo "Starting backend container ($BACKEND_NAME)..."
 docker run -d \
     -p ${BACKEND_PORT}:${BACKEND_PORT} \
