@@ -32,7 +32,7 @@ PythonとVueで使用するライブラリ等は[requrements.txt](backend/requir
 - Dockerのビルド方法
 ```sh
 chmod +x docker_build.sh # 初回のみ.
-sh docker_build.shm
+sh docker_build.sh
 ```
 - アプリケーションの起動方法
 ```sh
