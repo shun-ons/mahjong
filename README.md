@@ -34,10 +34,22 @@ PythonとVueで使用するライブラリ等は[requrements.txt](backend/requir
 chmod +x docker_build.sh # 初回のみ.
 sh docker_build.sh
 ```
+
 - アプリケーションの起動方法
 ```sh
 chmod +x run.sh  # 初回のみ.
 sh run.sh
+```
+
+- アプリケーションの終了方法
+```sh
+chmod +x docker_stop.sh  # 初回のみ.
+sh docker_stop.sh
+```
+
+- データセットのダウンロード方法
+```sh
+curl -L "https://app.roboflow.com/ds/CKT3me5L4k?key=g9RQEWzW6m" > roboflow.zip; unzip roboflow.zip -d ml/data; rm roboflow.zip
 ```
 
 ## トラブルシューティング

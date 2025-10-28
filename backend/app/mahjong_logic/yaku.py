@@ -21,8 +21,12 @@ class YakuJudge:
         """
         self.mentsu_list = analysis["mentsu"]
         self.janto = analysis["janto"]
-        self.hand = [self.janto, self.janto] + sum(self.mentsu_list, [])
         self.type = analysis["type"]
+        print(self.type)
+        if self.type != 'chitoitsu' and self.type != 'kokushi':
+            self.hand = [self.janto, self.janto] + sum(self.mentsu_list, [])
+        else:
+            self.hand = self.mentsu_list
         self.machi = analysis.get("machi", "ryanmen")
         self.called_mentsu_list = called_mentsu_list
         self.context = context

@@ -108,11 +108,11 @@ class HandAnalysis:
         if len(self.called_mentsu) == 0 and len(self.hand) == 14:
             # 国士無双の判定.
             if set(counts.keys()) == YAOCHUHAI:
-                return [{"type": "kokushi", "janto": self.agari_hai, "mentsu": [self.hand]}]
+                return [{"type": "kokushi", "janto": self.agari_hai, "mentsu": self.hand}]
             # 七対子の判定.
             if len(counts) == 7 and all(c == 2 for c in counts.values()):
                 machi_type = "tanki" # 七対子は単騎待ち.
-                agari_combination.append({"type": "chitoi", "janto": None, "mentsu": self.hand, "machi": machi_type})
+                agari_combination.append({"type": "chitoitsu", "janto": None, "mentsu": self.hand, "machi": machi_type})
         
         # 4面子1雀頭の解析.
         hand_counter = collections.Counter(normalization_hand)

@@ -13,17 +13,25 @@ FRONTEND_IMAGE="mahjong-frontend"
 FRONTEND_NAME="frontend_container"
 FRONTEND_PORT=8080
 
+# --- Dockerネットワークの作成 ---
+NETWORK_NAME="mahjong_network"
+docker network create $NETWORK_NAME || true
+
 # --- Dockerコンテナの実行 ---
 echo "Starting backend container ($BACKEND_NAME)..."
 docker run -d \
     -p ${BACKEND_PORT}:${BACKEND_PORT} \
     --name $BACKEND_NAME \
+    --network $NETWORK_NAME \
+    -v "$(pwd)/runs:/runs" \
+    -v "$(pwd)/yolov8m.pt:/yolov8m.pt" \
     $BACKEND_IMAGE
 
 echo "Starting frontend container ($FRONTEND_NAME)..."
 docker run -d \
     -p ${FRONTEND_PORT}:80 \
     --name $FRONTEND_NAME \
+    --network $NETWORK_NAME \
     $FRONTEND_IMAGE
 
 echo "------------------------------------------"

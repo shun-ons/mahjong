@@ -331,8 +331,6 @@ const recalculateScore = (correctedHand) => {
         計算中...
       </div>
       
-      <!-- ★★★ ここからが変更箇所 ★★★ -->
-      
       <!-- エラーメッセージ -->
       <div v-if="errorState" class="error-message">
         <strong>エラー:</strong> {{ errorState }}
@@ -350,7 +348,6 @@ const recalculateScore = (correctedHand) => {
         :hand="recognizedHand"
         @recalculate="recalculateScore"
       />
-      <!-- ★★★ 変更点ここまで ★★★ -->
       
     </main>
 
