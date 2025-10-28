@@ -43,7 +43,13 @@ sh run.sh
 
 - アプリケーションの終了方法
 ```sh
-docker stop backend_container frontend_container
+chmod +x docker_stop.sh  # 初回のみ.
+sh docker_stop.sh
+```
+
+- データセットのダウンロード方法
+```sh
+curl -L "https://app.roboflow.com/ds/CKT3me5L4k?key=g9RQEWzW6m" > roboflow.zip; unzip roboflow.zip -d ml/data; rm roboflow.zip
 ```
 
 ## トラブルシューティング

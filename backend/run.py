@@ -17,4 +17,4 @@ if __name__ == '__main__':
     アプリケーションの起動。
     このファイルが直接実行された場合に、サーバを起動する。
     """
-    app.run(host='0.0.0.0', port=5001, debug=True)
+    app.run(host='0.0.0.0', port=8000, debug=True)
