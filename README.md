@@ -34,10 +34,16 @@ PythonとVueで使用するライブラリ等は[requrements.txt](backend/requir
 chmod +x docker_build.sh # 初回のみ.
 sh docker_build.sh
 ```
+
 - アプリケーションの起動方法
 ```sh
 chmod +x run.sh  # 初回のみ.
 sh run.sh
+```
+
+- アプリケーションの終了方法
+```sh
+docker stop backend_container frontend_container
 ```
 
 ## トラブルシューティング
