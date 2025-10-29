@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed } from 'vue';
 import ResultDisplay from './components/ResultDisplay.vue';
-import HandDisplay from './components/HandDisplay.vue'; // ★ HandDisplay をインポート
+import HandDisplay from './components/HandDisplay.vue';
 
 // 送信データを定義.
 const formData = ref({
@@ -60,8 +60,8 @@ const sendData = () => {
   // 状態をリセット.
   isLoading.value = true;
   errorState.value = null;
-  calculationResult.value = null; // ★ 点数結果をクリア
-  recognizedHand.value = null;    // ★ 手牌もクリア
+  calculationResult.value = null;
+  recognizedHand.value = null;
 
   // (submissionData の作成は変更なし)
   const submissionData = new FormData();
