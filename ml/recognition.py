@@ -14,6 +14,9 @@ import cv2
 import numpy as np
 from ultralytics import YOLO
 from glob import glob
+import io
+from PIL import Image
+import pillow_heif
 
 # --- 定数定義 ---
 MODEL_PATH: str = "./runs/detect/mahjong_train_v3/weights/best.pt"
@@ -215,11 +218,10 @@ def analyze_hand_from_image(image_data: bytes, model_path: str) -> List[str]:
         raise e
 
     # 2. 画像データをOpenCVが扱える形式に変換する
-    np_array = np.frombuffer(image_data, np.uint8)
-    image = cv2.imdecode(np_array, cv2.IMREAD_COLOR)
-
-    if image is None:
-        raise ValueError("画像データとして認識できません。ファイルが破損している可能性があります。")
+    try:
+        image = Image.open(io.BytesIO(image_data)).convert("RGB")
+    except Exception as e:
+        raise ValueError("画像データが不正で読み込めません。HEIC, JPEG, PNG形式か確認してください。") from e
 
     # 3. モデルで推論を実行する
     # verbose=Falseでコンソールへの詳細なログ出力を抑制

@@ -87,7 +87,8 @@ def calculate_score_endpoint() -> tuple[Response, int]:
                 # hand_list = ["1m","2m","3m","2p","3p","4p","5s","6s","7s","1z","1z","1z", "5z", "5z"]
             except NoTilesDetectedError as e:
                 # 牌が検出できなかった場合
-                return jsonify({"status": "error", "message": str(e)}), 400
+                return jsonify({
+                    "status": "error", "message": str(e)}), 400
             except ValueError as e:
                 # 画像データが不正な場合
                 return jsonify({"status": "error", "message": str(e)}), 400
